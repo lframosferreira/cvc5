@@ -117,12 +117,12 @@ default = "false"
 help = "produce learned literals, support get-learned-literals"
 
 [[option]]
-name = "produceProofs"
-category = "regular"
-long = "produce-proofs"
-type = "bool"
-default = "false"
-help = "produce proofs, support check-proofs and get-proof"
+  name       = "produceProofs"
+  category   = "common"
+  long       = "produce-proofs"
+  type       = "bool"
+  default    = "false"
+  help       = "produce proofs, support check-proofs and get-proof"
 
 [[option]]
 name = "proofMode"
@@ -149,12 +149,12 @@ name = "full-proof-strict"
 help = "Produce full proofs of preprocessing, SAT and theory lemmas. Additionally disable techniques that will lead to incomplete proofs."
 
 [[option]]
-name = "checkProofs"
-category = "regular"
-long = "check-proofs"
-type = "bool"
-default = "false"
-help = "after UNSAT/VALID, check the generated proof (with proof)"
+  name       = "checkProofs"
+  category   = "common"
+  long       = "check-proofs"
+  type       = "bool"
+  default    = "false"
+  help       = "after UNSAT/VALID, check the generated proof (with proof)"
 
 [[option]]
 name = "produceUnsatCores"

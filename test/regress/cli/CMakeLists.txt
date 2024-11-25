@@ -716,6 +716,7 @@ set(regress_0_tests
   regress0/datatypes/model-subterms-min.smt2
   regress0/datatypes/mutual-rec-param-dt.smt2
   regress0/datatypes/mutually-recursive.cvc.smt2
+  regress0/datatypes/nullable_checks.smt2
   regress0/datatypes/pair-bool-bool.cvc.smt2
   regress0/datatypes/pair-real-bool.smt2
   regress0/datatypes/par-updater-type-rule.smt2
@@ -1150,6 +1151,7 @@ set(regress_0_tests
   regress0/options/version.smt2
   regress0/parallel-let.smt2
   regress0/parser/as.smt2
+  regress0/parser/bang-lex.smt2
   regress0/parser/bv_arity_smt2.6.smt2
   regress0/parser/bv_nat.smt2
   regress0/parser/constraint.smt2
@@ -1425,6 +1427,7 @@ set(regress_0_tests
   regress0/push-pop/units.cvc.smt2
   regress0/quantifiers/agg-rew-test-cf.smt2
   regress0/quantifiers/agg-rew-test.smt2
+  regress0/quantifiers/alpha-eq-var-reorder.smt2
   regress0/quantifiers/ari056.smt2
   regress0/quantifiers/ari-syqi.smt2
   regress0/quantifiers/ARI176e1.smt2
@@ -1911,6 +1914,7 @@ set(regress_0_tests
   regress0/strings/str004.smt2
   regress0/strings/str005.smt2
   regress0/strings/strings-charat.cvc.smt2
+  regress0/strings/strings-ext.smt2
   regress0/strings/strings-native-simple.cvc.smt2
   regress0/strings/strip-endpoint-itos.smt2
   regress0/strings/substr-rewrites.smt2
@@ -2003,6 +2007,7 @@ set(regress_0_tests
   regress0/tptp/tptp_parser7.smt2
   regress0/tptp/tptp_parser8.smt2
   regress0/tptp/tptp_parser9.smt2
+  regress0/uf-conv-rewrites.smt2
   regress0/uf/bool-pred-nested.smt2
   regress0/uf/ccredesign-fuzz.smtv1.smt2
   regress0/uf/cnf_abc.smt2
@@ -2458,7 +2463,6 @@ set(regress_1_tests
   regress1/gensys_brn001.smt2
   regress1/get-learned-literals.smt2
   regress1/get-learned-literals-types.smt2
-  regress1/quantifiers/ho-grammar.smt2
   regress1/ho/bug_freeVar_BDD_General_data_270.smt2
   regress1/ho/bound_var_bug.smt2
   regress1/ho/dd.seu-mbqi.smt2
@@ -2482,6 +2486,7 @@ set(regress_1_tests
   regress1/ho/soundness_fmf_SYO362^5-delta.smt2
   regress1/ho/store-ax-min.smt2
   regress1/hole6.cvc.smt2
+  regress1/interpolant-subs.smt2
   regress1/interpolant-unk-570.smt2
   regress1/ite5.smt2
   regress1/issue10750-zll-repeat.smt2
@@ -2763,6 +2768,7 @@ set(regress_1_tests
   regress1/quantifiers/florian-case-ax.smt2
   regress1/quantifiers/fp-cegqi-unsat.smt2
   regress1/quantifiers/gauss_init_0030.fof.smt2
+  regress1/quantifiers/ho-grammar.smt2
   regress1/quantifiers/ho-seu-sygus-inst.smt2
   regress1/quantifiers/horn-simple.smt2
   regress1/quantifiers/inst-max-level-segf.smt2
@@ -2889,6 +2895,7 @@ set(regress_1_tests
   regress1/quantifiers/qcft-javafe.filespace.TreeWalker.006.smt2
   regress1/quantifiers/qcft-smtlib3dbc51.smt2
   regress1/quantifiers/qe.smt2
+  regress1/quantifiers/qe-no-skolem.smt2
   regress1/quantifiers/qe-partial.smt2
   regress1/quantifiers/qe-subtypes.smt2
   regress1/quantifiers/qid.smt2
