@@ -94,6 +94,7 @@ bool NodeTemplate<ref_count>::isConst() const
   {
     return false;
   }
+<<<<<<< HEAD
   switch (getMetaKind())
   {
     case kind::metakind::CONSTANT:
@@ -126,6 +127,28 @@ bool NodeTemplate<ref_count>::isConst() const
             IsConstComputedAttr(), true);
         return bval;
       }
+=======
+  switch(getMetaKind()) {
+  case kind::metakind::CONSTANT:
+    Trace("isConst") << "Node::isConst() returning true, it's a CONSTANT" << std::endl;
+    return true;
+  case kind::metakind::VARIABLE:
+    Trace("isConst") << "Node::isConst() returning false, it's a VARIABLE" << std::endl;
+    return false;
+  default:
+    if(getAttribute(IsConstComputedAttr())) {
+      bool bval = getAttribute(IsConstAttr());
+      Trace("isConst") << "Node::isConst() returning cached value " << (bval ? "true" : "false") << " for: " << *this << std::endl;
+      return bval;
+    } else {
+      bool bval =
+          expr::TypeChecker::computeIsConst(d_nv->getNodeManager(), *this);
+      Trace("isConst") << "Node::isConst() computed value " << (bval ? "true" : "false") << " for: " << *this << std::endl;
+      const_cast< NodeTemplate<ref_count>* >(this)->setAttribute(IsConstAttr(), bval);
+      const_cast< NodeTemplate<ref_count>* >(this)->setAttribute(IsConstComputedAttr(), true);
+      return bval;
+    }
+>>>>>>> main
   }
 }
 
@@ -135,7 +158,7 @@ template bool NodeTemplate<false>::isConst() const;
 template <bool ref_count>
 bool NodeTemplate<ref_count>::hasName() const
 {
-  return NodeManager::currentNM()->hasAttribute(*this, expr::VarNameAttr());
+  return d_nv->getNodeManager()->hasAttribute(*this, expr::VarNameAttr());
 }
 
 template bool NodeTemplate<true>::hasName() const;
@@ -144,7 +167,7 @@ template bool NodeTemplate<false>::hasName() const;
 template <bool ref_count>
 std::string NodeTemplate<ref_count>::getName() const
 {
-  return NodeManager::currentNM()->getAttribute(*this, expr::VarNameAttr());
+  return d_nv->getNodeManager()->getAttribute(*this, expr::VarNameAttr());
 }
 
 template std::string NodeTemplate<true>::getName() const;
