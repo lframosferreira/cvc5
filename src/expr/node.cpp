@@ -94,40 +94,6 @@ bool NodeTemplate<ref_count>::isConst() const
   {
     return false;
   }
-<<<<<<< HEAD
-  switch (getMetaKind())
-  {
-    case kind::metakind::CONSTANT:
-      Trace("isConst") << "Node::isConst() returning true, it's a CONSTANT"
-                       << std::endl;
-      return true;
-    case kind::metakind::VARIABLE:
-      Trace("isConst") << "Node::isConst() returning false, it's a VARIABLE"
-                       << std::endl;
-      return false;
-    default:
-      if (getAttribute(IsConstComputedAttr()))
-      {
-        bool bval = getAttribute(IsConstAttr());
-        Trace("isConst") << "Node::isConst() returning cached value "
-                         << (bval ? "true" : "false") << " for: " << *this
-                         << std::endl;
-        return bval;
-      }
-      else
-      {
-        bool bval =
-            expr::TypeChecker::computeIsConst(NodeManager::currentNM(), *this);
-        Trace("isConst") << "Node::isConst() computed value "
-                         << (bval ? "true" : "false") << " for: " << *this
-                         << std::endl;
-        const_cast<NodeTemplate<ref_count>*>(this)->setAttribute(IsConstAttr(),
-                                                                 bval);
-        const_cast<NodeTemplate<ref_count>*>(this)->setAttribute(
-            IsConstComputedAttr(), true);
-        return bval;
-      }
-=======
   switch(getMetaKind()) {
   case kind::metakind::CONSTANT:
     Trace("isConst") << "Node::isConst() returning true, it's a CONSTANT" << std::endl;
@@ -148,7 +114,6 @@ bool NodeTemplate<ref_count>::isConst() const
       const_cast< NodeTemplate<ref_count>* >(this)->setAttribute(IsConstComputedAttr(), true);
       return bval;
     }
->>>>>>> main
   }
 }
 
