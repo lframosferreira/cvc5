@@ -64,6 +64,7 @@ The following flags enable optional packages (disable with --no-<option name>).
   --poly                   use the LibPoly library [default=yes]
   --cocoa                  use the CoCoA library
   --editline               support the editline library
+  --mata                   use the Mata automata library
 
 Optional Path to Optional Packages:
   --glpk-dir=PATH          path to top level of GLPK installation
@@ -143,6 +144,7 @@ win64_native=default
 arm64=default
 werror=default
 ipo=default
+mata=default
 
 glpk_dir=default
 
@@ -222,6 +224,9 @@ do
 
     --cryptominisat) cryptominisat=ON;;
     --no-cryptominisat) cryptominisat=OFF;;
+
+    --mata) mata=ON;;
+    --no-mata) mata=OFF;;
 
     --debug-symbols) debug_symbols=ON;;
     --no-debug-symbols) debug_symbols=OFF;;
@@ -421,6 +426,8 @@ fi
   && cmake_opts="$cmake_opts -DUSE_GLPK=$glpk"
 [ $kissat != default ] \
   && cmake_opts="$cmake_opts -DUSE_KISSAT=$kissat"
+[ $mata != default ] \
+  && cmake_opts="$cmake_opts -DUSE_MATA=$mata"
 [ $poly != default ] \
   && cmake_opts="$cmake_opts -DUSE_POLY=$poly"
 [ $cocoa != default ] \

@@ -17,8 +17,7 @@
 #include "preprocessing/passes/automata.h"
 
 #include <cmath>
-#include <cstdint>
-#include <optional>
+#include <mata/nfa/nfa.hh>
 #include <queue>
 #include <string>
 
@@ -324,7 +323,7 @@ PreprocessingPassResult Automata::applyInternal(
     to_process.push_back(a);
   }
 
-  std::system("ls");
+  mata::nfa::Nfa aut(5);
 
   return PreprocessingPassResult::NO_CONFLICT;
 }

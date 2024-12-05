@@ -124,6 +124,7 @@ option(USE_EDITLINE      "Use Editline for better interactive support")
 option(USE_GLPK          "Use GLPK simplex solver")
 option(USE_KISSAT        "Use Kissat SAT solver")
 option(USE_POLY          "Use LibPoly for polynomial arithmetic")
+option(USE_MATA          "Use Mata for automata operations")
 
 # Custom install directories for dependencies
 # If no directory is provided by the user, we first check if the dependency was
@@ -558,6 +559,11 @@ if(USE_KISSAT)
   add_definitions(-DCVC5_USE_KISSAT)
 endif()
 
+if(USE_MATA)
+  find_library(LIBMATA mata REQUIRED)
+  add_definitions(-DCVC5_USE_MATA)
+endif()
+
 if(USE_POLY)
   find_package(Poly 0.1.13 REQUIRED)
   add_definitions(-DCVC5_USE_POLY)
@@ -772,6 +778,7 @@ message("")
 print_config("CryptoMiniSat             " ${USE_CRYPTOMINISAT} FOUND_SYSTEM ${CryptoMiniSat_FOUND_SYSTEM})
 print_config("GLPK                      " ${USE_GLPK})
 print_config("Kissat                    " ${USE_KISSAT} FOUND_SYSTEM ${Kissat_FOUND_SYSTEM})
+print_config("Mata                      " ${USE_MATA} FOUND_SYSTEM ${Mata_FOUND_SYSTEM})
 print_config("LibPoly                   " ${USE_POLY} FOUND_SYSTEM ${Poly_FOUND_SYSTEM})
 print_config("CoCoALib                  " ${USE_COCOA} FOUND_SYSTEM ${CoCoA_FOUND_SYSTEM})
 
