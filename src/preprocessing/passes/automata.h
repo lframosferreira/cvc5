@@ -20,6 +20,7 @@ Solving Linear Integer Arithmetic
  */
 
 #include <bitset>
+#include <mata/nfa/nfa.hh>
 
 #include "cvc5_private.h"
 
@@ -32,14 +33,6 @@ namespace cvc5::internal {
 namespace preprocessing {
 namespace passes {
 
-struct AutomataEdge
-{
-  int endpoint;
-  // assuming nr of coefficents at most 64
-  int transition;
-  bool acc;
-};
-
 class Automata : public PreprocessingPass
 {
  public:
@@ -48,8 +41,12 @@ class Automata : public PreprocessingPass
  protected:
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
+  void build_nfa();
+  bool check_for_nfa_emptiness();
+  void find_solution_and_write_to_smtlib_file(const std::string& filename);
 
  private:
+  mata::nfa::Nfa nfa;
 };
 
 }  // namespace passes

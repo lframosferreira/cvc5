@@ -17,7 +17,7 @@
 #include "preprocessing/passes/automata.h"
 
 #include <cmath>
-#include <mata/nfa/nfa.hh>
+// #include <mata/nfa/nfa.hh>
 #include <queue>
 #include <string>
 
@@ -45,121 +45,108 @@ namespace {
 }
 /* -------------------------------------------------------------------------- */
 
-void printDfa(const std::map<int, std::vector<AutomataEdge>>& dfa)
-{
-  for (const auto& [state, edges] : dfa)
-  {
-    std::cout << state << std::endl;
-    for (const auto& [endpoint, transition, acc] : edges)
-    {
-      std::cout << endpoint << ",trans=" << transition << ",acc=" << acc << " ";
-    }
-    std::cout << std::endl;
-  }
-}
-
-void buildDfa(const int& initial_state,
-              const std::vector<int> coefficients,
-              std::map<int, std::vector<AutomataEdge>>& dfa,
-              const kind::Kind_t& assertion_kind,
-              int mod_value)
-{
-  int number_of_coefficients = static_cast<int>(coefficients.size());
-  for (const auto& e : coefficients)
-  {
-    std::cout << e << " ";
-  }
-  std::cout << std::endl;
-
-  std::queue<int> states_to_process;
-  states_to_process.push(initial_state);
-  std::set<int> processed_states;
-
-  // I am assuming number of coefficients at most 64, this is obviously not
-  // the general case
-  while (!states_to_process.empty())
-  {
-    int c = states_to_process.front();
-    states_to_process.pop();
-    if (processed_states.find(c) != processed_states.end())
-    {
-      // don't need to process it again
-      continue;
-    }
-    processed_states.insert(c);
-    dfa.insert({c, {}});
-    for (int transition = 0; transition < (1 << number_of_coefficients);
-         transition++)
-    {
-      int k = c;
-      // computing k
-
-      int transition_acc_sentinel = c;
-      for (int i = 0; i < number_of_coefficients; i++)
-      {
-        bool condition = (1 << i) & transition;
-        if (condition)
-        {
-          k -= coefficients.at(i);
-          transition_acc_sentinel += coefficients.at(i);
-        }
-      }
-      switch (assertion_kind)
-      {
-        case kind::Kind_t::EQUAL:
-        {
-          if (k % 2 == 0)
-          {
-            bool is_transition_acc = transition_acc_sentinel == 0;
-            struct AutomataEdge edge = {k / 2, transition, is_transition_acc};
-            dfa.at(c).push_back(edge);
-            states_to_process.push(k / 2);
-          }
-
-          break;
-        }
-        case kind::Kind_t::LEQ:
-        {
-          bool is_transition_acc = transition_acc_sentinel >= 0;
-          int new_state = k % 2 == 0 ? k / 2 : (k < 0 ? k / 2 - 1 : k / 2);
-          std::cout << "--------" << std::endl;
-          std::cout << k << std::endl;
-          std::cout << new_state << std::endl;
-          std::cout << "--------" << std::endl;
-          struct AutomataEdge edge = {new_state, transition, is_transition_acc};
-          dfa.at(c).push_back(edge);
-          states_to_process.push(new_state);
-          break;
-        };
-        case kind::Kind_t::INTS_MODULUS_TOTAL:
-        {
-          if (mod_value % 2 == 0)
-          {
-            if (k % 2 == 0)
-            {
-              bool is_transition_acc = transition_acc_sentinel % mod_value == 0;
-              int new_state = (mod_value + ((k / 2) % mod_value)) % mod_value;
-              struct AutomataEdge edge = {
-                  new_state, transition, is_transition_acc};
-              dfa.at(c).push_back(edge);
-              states_to_process.push(new_state);
-            }
-          }
-          else
-          {
-          }
-
-          break;
-        }
-        default:
-        {
-          std::cout << "Not LIA" << std::endl;
-          break;
-        }
-      }
-    }
-  }
-}
+// void buildDfa(const int& initial_state,
+//               const std::vector<int> coefficients,
+//               std::map<int, std::vector<AutomataEdge>>& dfa,
+//               const kind::Kind_t& assertion_kind,
+//               int mod_value)
+// {
+//   int number_of_coefficients = static_cast<int>(coefficients.size());
+//   for (const auto& e : coefficients)
+//   {
+//     std::cout << e << " ";
+//   }
+//   std::cout << std::endl;
+//
+//   std::queue<int> states_to_process;
+//   states_to_process.push(initial_state);
+//   std::set<int> processed_states;
+//
+//   // I am assuming number of coefficients at most 64, this is obviously not
+//   // the general case
+//   while (!states_to_process.empty())
+//   {
+//     int c = states_to_process.front();
+//     states_to_process.pop();
+//     if (processed_states.find(c) != processed_states.end())
+//     {
+//       // don't need to process it again
+//       continue;
+//     }
+//     processed_states.insert(c);
+//     dfa.insert({c, {}});
+//     for (int transition = 0; transition < (1 << number_of_coefficients);
+//          transition++)
+//     {
+//       int k = c;
+//       // computing k
+//
+//       int transition_acc_sentinel = c;
+//       for (int i = 0; i < number_of_coefficients; i++)
+//       {
+//         bool condition = (1 << i) & transition;
+//         if (condition)
+//         {
+//           k -= coefficients.at(i);
+//           transition_acc_sentinel += coefficients.at(i);
+//         }
+//       }
+//       switch (assertion_kind)
+//       {
+//         case kind::Kind_t::EQUAL:
+//         {
+//           if (k % 2 == 0)
+//           {
+//             bool is_transition_acc = transition_acc_sentinel == 0;
+//             struct AutomataEdge edge = {k / 2, transition,
+//             is_transition_acc}; dfa.at(c).push_back(edge);
+//             states_to_process.push(k / 2);
+//           }
+//
+//           break;
+//         }
+//         case kind::Kind_t::LEQ:
+//         {
+//           bool is_transition_acc = transition_acc_sentinel >= 0;
+//           int new_state = k % 2 == 0 ? k / 2 : (k < 0 ? k / 2 - 1 : k / 2);
+//           std::cout << "--------" << std::endl;
+//           std::cout << k << std::endl;
+//           std::cout << new_state << std::endl;
+//           std::cout << "--------" << std::endl;
+//           struct AutomataEdge edge = {new_state, transition,
+//           is_transition_acc}; dfa.at(c).push_back(edge);
+//           states_to_process.push(new_state);
+//           break;
+//         };
+//         case kind::Kind_t::INTS_MODULUS_TOTAL:
+//         {
+//           if (mod_value % 2 == 0)
+//           {
+//             if (k % 2 == 0)
+//             {
+//               bool is_transition_acc = transition_acc_sentinel % mod_value ==
+//               0; int new_state = (mod_value + ((k / 2) % mod_value)) %
+//               mod_value; struct AutomataEdge edge = {
+//                   new_state, transition, is_transition_acc};
+//               dfa.at(c).push_back(edge);
+//               states_to_process.push(new_state);
+//             }
+//           }
+//           else
+//           {
+//           }
+//
+//           break;
+//         }
+//         default:
+//         {
+//           std::cout << "Not LIA" << std::endl;
+//           break;
+//         }
+//       }
+//     }
+//   }
+// }
 
 // to_process.pop_back();  // removing redundant TRUE constant
 //

@@ -23,7 +23,7 @@ find_library(Mata_LIBRARIES NAMES libmata.a)
 set(Mata_FOUND_SYSTEM FALSE)
 
 if(Mata_INCLUDE_DIR AND Mata_LIBRARIES)
- # set(Mata_FOUND_SYSTEM TRUE)
+ set(Mata_FOUND_SYSTEM TRUE)
  set(Mata_VERSION "")
  # check_system_version("Mata")
 endif()
@@ -44,18 +44,18 @@ if(NOT Mata_FOUND_SYSTEM)
   #   BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libmata.a
   # )
 
- ExternalProject_Add(
-    GIT_REPOSITORY https://github.com/VeriFIT/mata.git
-    GIT_TAG devel  # Specify a branch, tag, or commit hash
-     CONFIGURE_COMMAND make release 
-     INSTALL_COMMAND make install
-     COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/include/mata/
-             <INSTALL_DIR>/include/mata/
-     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libmata.a
-)
+#  ExternalProject_Add(
+#     GIT_REPOSITORY https://github.com/VeriFIT/mata.git
+#     GIT_TAG devel  # Specify a branch, tag, or commit hash
+#      CONFIGURE_COMMAND make release 
+#      INSTALL_COMMAND make install
+#      COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/include/mata/
+#              <INSTALL_DIR>/include/mata/
+#      BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libmata.a
+# )
 
  set(Mata_INCLUDE_DIR "${DEPS_BASE}/include/")
- set(Mata_LIBRARIES "${DEPS_BASE}/lib/libmata.a")
+ set(Mata_LIBRARIES "/usr/local/lib/libmata.a")
 
 endif()
 
