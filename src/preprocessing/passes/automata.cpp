@@ -323,7 +323,7 @@ PreprocessingPassResult Automata::applyInternal(
     to_process.push_back(a);
   }
 
-  mata::nfa::Nfa aut(5);
+  // mata::nfa::Nfa aut(5);
 
   return PreprocessingPassResult::NO_CONFLICT;
 }

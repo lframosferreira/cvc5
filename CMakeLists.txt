@@ -560,7 +560,7 @@ if(USE_KISSAT)
 endif()
 
 if(USE_MATA)
-  find_library(LIBMATA mata REQUIRED)
+  find_package(Mata)
   add_definitions(-DCVC5_USE_MATA)
 endif()
 
