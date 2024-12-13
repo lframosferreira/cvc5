@@ -310,10 +310,6 @@ PreprocessingPassResult Automata::applyInternal(
     to_process.push_back(a);
   }
 
-  mata::nfa::Nfa aut(5);
-  aut.add_state(3);
-  // aut.print_to_dot();
-
   return PreprocessingPassResult::NO_CONFLICT;
 }
 

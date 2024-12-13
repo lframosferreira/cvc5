@@ -1530,6 +1530,13 @@ if(USE_KISSAT)
   target_include_directories(cvc5-obj SYSTEM PRIVATE ${Kissat_INCLUDE_DIR})
   target_link_libraries(cvc5 PRIVATE $<BUILD_INTERFACE:Kissat> $<INSTALL_INTERFACE:kissat>)
 endif()
+
+if (USE_MATA)
+  add_dependencies(cvc5-obj Mata)
+  target_include_directories(cvc5-obj SYSTEM PRIVATE ${Mata_INCLUDE_DIR})
+  target_link_libraries(cvc5 PRIVATE "/usr/local/lib/libmata.a")
+endif()
+
 if(USE_GLPK)
   add_dependencies(cvc5-obj GLPK)
   target_include_directories(cvc5-obj SYSTEM PRIVATE ${GLPK_INCLUDE_DIR})

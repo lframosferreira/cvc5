@@ -54,9 +54,9 @@ if(NOT Mata_FOUND_SYSTEM)
 #      BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libmata.a
 # )
 
+endif()
+
  set(Mata_INCLUDE_DIR "/usr/local/include/mata/")
  set(Mata_LIBRARIES "/usr/local/lib/libmata.a")
-
-endif()
 
 
