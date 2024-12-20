@@ -130,6 +130,7 @@ bool ProcessAssertions::apply(AssertionPipeline& ap)
   // We do not call theory-specific expand definitions here, since we want
   // to give the opportunity to rewrite/preprocess terms before expansion.
   applyPass("apply-substs", ap);
+
   Trace("smt-proc")
       << "ProcessAssertions::processAssertions() : post-definition-expansion"
       << endl;

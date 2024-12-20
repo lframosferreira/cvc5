@@ -308,6 +308,7 @@ PreprocessingPassResult Automata::applyInternal(
   for (const Node& a : assertionsToPreprocess->ref())
   {
     to_process.push_back(a);
+    std::cout << a.notNode << std::endl;
   }
 
   return PreprocessingPassResult::NO_CONFLICT;

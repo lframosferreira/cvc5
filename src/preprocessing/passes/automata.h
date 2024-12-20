@@ -33,6 +33,12 @@ namespace cvc5::internal {
 namespace preprocessing {
 namespace passes {
 
+typedef struct NfaState
+{
+  unsigned int c;
+  unsigned int mod_val;  // should be 0 when it is not a mod expression
+} NfaState;
+
 class Automata : public PreprocessingPass
 {
  public:
@@ -41,9 +47,8 @@ class Automata : public PreprocessingPass
  protected:
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
-  void build_nfa();
+  void build_nfa_for_atomic_formula();
   bool check_for_nfa_emptiness();
-  void find_solution_and_write_to_smtlib_file(const std::string& filename);
 
  private:
   mata::nfa::Nfa nfa;
