@@ -18,7 +18,6 @@
 
 #include <cmath>
 #include <mata/nfa/nfa.hh>
-#include <queue>
 #include <string>
 
 #include "base/check.h"
@@ -305,12 +304,31 @@ PreprocessingPassResult Automata::applyInternal(
   /* collect all function applications and generate consistency lemmas
    * accordingly */
   std::vector<TNode> to_process;
+
+  std::unordered_set<Node> vars;
   for (const Node& a : assertionsToPreprocess->ref())
   {
+    expr::getVariables(a, vars);
     to_process.push_back(a);
-    std::cout << a.notNode << std::endl;
   }
 
+  // contains variables in formula and their indices for mapping
+  std::unordered_map<Node, unsigned int> vars_to_int;
+  unsigned int idx = 0;
+  for (const Node& a : vars)
+  {
+    vars_to_int[a] = idx++;
+  }
+
+  mata::nfa::Nfa automata;
+  for (const Node& a : to_process)
+  {
+    // build automata for atomic formula
+    //
+    // join with general nfa called automata
+  }
+
+  std::cout << automata.is_lang_empty() << std::endl;
   return PreprocessingPassResult::NO_CONFLICT;
 }
 
