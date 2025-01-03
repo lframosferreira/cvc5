@@ -5,5 +5,6 @@
 (declare-const z Int)
 ; (assert (<= (- x 1) (* 2 y)))
 ; (assert (<= (+ (+ (* 3 z) (+ x 5)) (* 2 y)) 1))
+; (assert (or (<= (- x 1) (* 2 y)) (<= (+ (+ (* 3 z) (+ x 5)) (* 2 y)) 1)))
 (assert (and (<= (- x 1) (* 2 y)) (<= (+ (+ (* 3 z) (+ x 5)) (* 2 y)) 1)))
 (check-sat)

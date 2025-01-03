@@ -19,7 +19,6 @@ Solving Linear Integer Arithmetic
  * Calls Theory::preprocess(...) on every assertion of the formula.
  */
 
-#include <bitset>
 #include <mata/nfa/nfa.hh>
 
 #include "cvc5_private.h"
@@ -35,8 +34,10 @@ namespace passes {
 
 typedef struct NfaState
 {
-  unsigned int c;
-  unsigned int mod_val;  // should be 0 when it is not a mod expression
+  int c;
+  unsigned int mod_value;  // should be 0 when it is not a mod expression
+
+  bool operator<(const NfaState& other) const { return c < other.c; }
 } NfaState;
 
 class Automata : public PreprocessingPass
@@ -47,11 +48,12 @@ class Automata : public PreprocessingPass
  protected:
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
-  void build_nfa_for_atomic_formula();
+  mata::nfa::Nfa build_nfa_for_atomic_formula(const Node& node);
   bool check_for_nfa_emptiness();
 
  private:
   mata::nfa::Nfa nfa;
+  std::unordered_map<Node, unsigned int> vars_to_int;
 };
 
 }  // namespace passes
