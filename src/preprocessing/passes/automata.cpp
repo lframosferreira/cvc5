@@ -31,9 +31,14 @@
 #include "smt/logic_exception.h"
 #include "util/rational.h"
 
+int divide_by_two_and_floor(int k)
+{
+  return k % 2 == 0 ? k / 2 : (k < 0 ? k / 2 - 1 : k / 2);
+}
+
 using namespace cvc5::internal;
 using namespace cvc5::internal::theory;
-
+#define dbg(x) std::cout << #x << " = " << x << "\n"
 namespace cvc5::internal {
 namespace preprocessing {
 namespace passes {
@@ -216,51 +221,69 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& a)
 
       // now process right side of relation
       TNode rhs = *aux.rbegin();
-      for (const TNode& assertion : rhs)
+      if (rhs.getKind() == kind::Kind_t::CONST_INTEGER)
       {
-        if (assertion.getKind() == kind::Kind_t::MULT)
+        c = stoi(rhs.getConst<Rational>().toString());
+      }
+      else
+      {
+        for (const TNode& assertion : rhs)
         {
-          lhs = *assertion.begin();
-          int64_t coef = stoi(lhs.getConst<Rational>().toString());
-          coefficients.push_back(-1 * coef);
-          vars.push_back(*assertion.rbegin());
-        }
-        else if (assertion.getKind() == kind::Kind_t::VARIABLE)
-        {
-          coefficients.push_back(-1);
-          vars.push_back(assertion);
-        }
-        else
-        {
-          // for sure it's the constant C
-          c = stoi(assertion.getConst<Rational>().toString());
+          if (assertion.getKind() == kind::Kind_t::MULT)
+          {
+            lhs = *assertion.begin();
+            int64_t coef = stoi(lhs.getConst<Rational>().toString());
+            coefficients.push_back(-1 * coef);
+            vars.push_back(*assertion.rbegin());
+          }
+          else if (assertion.getKind() == kind::Kind_t::VARIABLE)
+          {
+            coefficients.push_back(-1);
+            vars.push_back(assertion);
+          }
+          else
+          {
+            // for sure it's the constant C
+            c = stoi(assertion.getConst<Rational>().toString());
+          }
         }
       }
       break;
     }
+
       // case a1x1 + ... + anxn <= c (cvc5 converts into a not (>=))
-    case kind::Kind_t::NOT:
+    case kind::Kind_t::LEQ:
     {
       aux = *aux.begin();
       TNode lhs = *aux.begin();
-      TNode rhs = *(aux.end() - 1);
+      TNode rhs = *(aux.rbegin());
       c = stoi(rhs.getConst<Rational>().toString());
       c--;
-      for (const TNode& assertion : lhs)
+      if (lhs.getKind() == kind::Kind_t::VARIABLE)
       {
-        if (assertion.getKind() == kind::Kind_t::MULT)
+        coefficients.push_back(1);
+        vars.push_back(lhs);
+      }
+      else
+      {
+        for (const TNode& assertion : lhs)
         {
-          lhs = *assertion.begin();
-          int64_t coef = stoi(lhs.getConst<Rational>().toString());
-          coefficients.push_back(coef);
-        }
-        else if (assertion.getKind() == kind::Kind_t::VARIABLE)
-        {
-          coefficients.push_back(1);
-        }
-        else
-        {
-          std::cout << "We shouldn't get here" << std::endl;
+          if (assertion.getKind() == kind::Kind_t::MULT)
+          {
+            lhs = *assertion.begin();
+            int64_t coef = stoi(lhs.getConst<Rational>().toString());
+            coefficients.push_back(coef);
+            vars.push_back(*assertion.rbegin());
+          }
+          else if (assertion.getKind() == kind::Kind_t::VARIABLE)
+          {
+            coefficients.push_back(1);
+            vars.push_back(assertion);
+          }
+          else
+          {
+            std::cout << "We shouldn't get here" << std::endl;
+          }
         }
       }
       break;
@@ -311,7 +334,13 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
   std::map<NfaState, unsigned int> nfa_state_to_int;
   auto [assertion_kind, coefficients, vars, c, mod_value] =
       get_atomic_formula_structure(node);
+  dbg(c);
   unsigned int idx = 0;
+  std::cout << "vars_to_int\n";
+  for (auto& [a, b] : vars_to_int)
+  {
+    std::cout << a << " " << b << std::endl;
+  }
   switch (assertion_kind)
   {
     case kind::Kind_t::EQUAL:
@@ -325,7 +354,72 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
       states_to_process.insert({c, mod_value});
       while (!states_to_process.empty())
       {
-        std::cout << states_to_process.size() << std::endl;
+        // this should remove the first element of the set
+        NfaState state = *states_to_process.begin();
+        states_to_process.erase(std::next(states_to_process.begin(), 0));
+
+        // I only add the state to the automata if it is not the initial state I
+        // already added
+        unsigned long number_of_variables =
+            static_cast<unsigned long>(vars_to_int.size());
+        std::cout << "state being processed\n";
+        dbg(state.c);
+
+        for (unsigned long sigma = 0; sigma < (1UL << number_of_variables);
+             sigma++)
+        {
+          int new_c = state.c;
+
+          int acc = 0;
+          // this can be preocmputed
+          for (int i = 0; i < (int)coefficients.size(); i++)
+          {
+            acc += coefficients.at(i) * (sigma & (1 << vars_to_int[vars[i]]));
+          }
+          new_c -= acc;
+          if (new_c % 2 != 0) continue;  // value is odd, we can continue
+          new_c = divide_by_two_and_floor(new_c);
+
+          if (nfa_state_to_int.count({new_c, state.mod_value}) == 0)
+          {
+            std::cout << "adding state to aut\n";
+            dbg(new_c);
+            dbg(idx);
+            states_to_process.insert({new_c, state.mod_value});
+            aut.add_state(idx);
+            nfa_state_to_int[{new_c, state.mod_value}] = idx++;
+          }
+          aut.delta.add(nfa_state_to_int[{state.c, state.mod_value}],
+                        sigma,
+                        nfa_state_to_int[{new_c, state.mod_value}]);
+          if (state.c + acc >= 0)
+          {
+            if (aut.final.empty())
+            {
+              std::cout << "adding final state\n";
+              dbg(idx);
+              aut.final = {idx};
+              nfa_state_to_int[final_state] = idx++;
+            }
+            aut.delta.add(nfa_state_to_int[{state.c, mod_value}],
+                          sigma,
+                          nfa_state_to_int[final_state]);
+          }
+        }
+      }
+    }
+    break;
+    case kind::Kind_t::LEQ:
+    {
+      NfaState final_state = {0, 1};  // for this particular case we use the mod
+                                      // value as a flag for the final state
+      std::set<NfaState> states_to_process;
+
+      aut.initial = {idx};
+      nfa_state_to_int[{c, mod_value}] = idx++;
+      states_to_process.insert({c, mod_value});
+      while (!states_to_process.empty())
+      {
         // this should remove the first element of the set
         NfaState state = *states_to_process.begin();
         states_to_process.erase(std::next(states_to_process.begin(), 0));
@@ -335,19 +429,21 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
         unsigned long number_of_variables =
             static_cast<unsigned long>(vars_to_int.size());
 
-        for (unsigned long sigma = 0; sigma < 1 << number_of_variables; sigma++)
+        for (unsigned long sigma = 0; sigma < (1UL << number_of_variables);
+             sigma++)
         {
           int new_c = state.c;
+
           int acc = 0;
-          for (int i = 0; i < coefficients.size(); i++)
+          // this can be preocmputed
+
+          for (int i = 0; i < (int)coefficients.size(); i++)
           {
             acc += coefficients.at(i) * (sigma & (1 << vars_to_int[vars[i]]));
           }
           new_c -= acc;
-          if (new_c & 1) continue;  // value is odd, we can continue
-          new_c >>= 1;
+          new_c = divide_by_two_and_floor(new_c);
 
-          // this might be wrong
           if (nfa_state_to_int.count({new_c, state.mod_value}) == 0)
           {
             states_to_process.insert({new_c, state.mod_value});
@@ -357,7 +453,7 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
           aut.delta.add(nfa_state_to_int[{state.c, state.mod_value}],
                         sigma,
                         nfa_state_to_int[{new_c, state.mod_value}]);
-          if ((state.c + acc) >> 1 >= 0)
+          if (state.c + acc >= 0)
           {
             if (aut.final.empty())
             {

@@ -37,7 +37,11 @@ typedef struct NfaState
   int c;
   unsigned int mod_value;  // should be 0 when it is not a mod expression
 
-  bool operator<(const NfaState& other) const { return c < other.c; }
+  bool operator<(const NfaState& other) const
+  {
+    if (c != other.c) return c < other.c;
+    return mod_value < other.mod_value;
+  }
 } NfaState;
 
 class Automata : public PreprocessingPass
