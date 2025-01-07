@@ -86,7 +86,16 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
       // form ax = c
       else if (lhs.getKind() == kind::Kind_t::MULT)
       {
-        int coef = stoi((*lhs.begin()).getConst<Rational>().toString());
+        int coef;
+        if ((*lhs.begin()).getKind() == kind::Kind_t::NEG)
+        {
+          coef =
+              stoi((*(*lhs.begin()).begin()).getConst<Rational>().toString());
+        }
+        else  // almost sure is a alone value for coefficient
+        {
+          coef = stoi((*lhs.begin()).getConst<Rational>().toString());
+        }
         coefficients.push_back(coef);
         vars.push_back((*lhs.rbegin()));
       }
@@ -98,10 +107,20 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
           if (val.getKind() == kind::Kind_t::MULT)
           {
             vars.push_back(*val.rbegin());
-            int coef = stoi((*val.begin()).getConst<Rational>().toString());
+            int coef;
+            if ((*val.begin()).getKind() == kind::Kind_t::NEG)
+            {
+              coef = stoi(
+                  (*(*val.begin()).begin()).getConst<Rational>().toString());
+            }
+            else  // almost sure is a alone value for coefficient
+            {
+              coef = stoi((*val.begin()).getConst<Rational>().toString());
+            }
             coefficients.push_back(coef);
           }
           else
+
           {
             // for sure it's a single variable, so it's coefficient is 1
             vars.push_back(lhs);
@@ -138,7 +157,16 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
       // form ax <= c
       else if (lhs.getKind() == kind::Kind_t::MULT)
       {
-        int coef = stoi((*lhs.begin()).getConst<Rational>().toString());
+        int coef;
+        if ((*lhs.begin()).getKind() == kind::Kind_t::NEG)
+        {
+          coef =
+              stoi((*(*lhs.begin()).begin()).getConst<Rational>().toString());
+        }
+        else  // almost sure is a alone value for coefficient
+        {
+          coef = stoi((*lhs.begin()).getConst<Rational>().toString());
+        }
         coefficients.push_back(coef);
         vars.push_back((*lhs.rbegin()));
       }
@@ -150,7 +178,16 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
           if (val.getKind() == kind::Kind_t::MULT)
           {
             vars.push_back(*val.rbegin());
-            int coef = stoi((*val.begin()).getConst<Rational>().toString());
+            int coef;
+            if ((*val.begin()).getKind() == kind::Kind_t::NEG)
+            {
+              coef = stoi(
+                  (*(*val.begin()).begin()).getConst<Rational>().toString());
+            }
+            else  // almost sure is a alone value for coefficient
+            {
+              coef = stoi((*val.begin()).getConst<Rational>().toString());
+            }
             coefficients.push_back(coef);
           }
           else
@@ -206,15 +243,15 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
     }
     default: break;
   }
-  dbg("-------");
-  std::cout << node << std::endl;
-  for (int i = 0; i < (int)vars.size(); i++)
-  {
-    std::cout << coefficients[i] << " " << vars[i] << std::endl;
-  }
-  dbg(c);
-
-  dbg("-------");
+  // dbg("-------");
+  // std::cout << node << std::endl;
+  // for (int i = 0; i < (int)vars.size(); i++)
+  // {
+  //   std::cout << coefficients[i] << " " << vars[i] << std::endl;
+  // }
+  // dbg(c);
+  //
+  // dbg("-------");
   return {node.getKind(), coefficients, vars, c, mod_value};
 }
 
@@ -238,6 +275,7 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       auto nfa2 = build_nfa_for_formula(*node.rbegin());
       // And here a get the union
       nfa1.unite_nondet_with(nfa2);
+      std::cout << "united nfas" << std::endl;
       formula_nfa = nfa1;
     }
     break;
@@ -246,6 +284,7 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       auto nfa1 = build_nfa_for_formula(*node.begin());
       auto nfa2 = build_nfa_for_formula(*node.rbegin());
       formula_nfa = mata::nfa::intersection(nfa1, nfa2);
+      std::cout << "intersected nfas" << std::endl;
     }
     break;
     case kind::Kind_t::NOT:
@@ -255,8 +294,10 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
                            // COULD BE SOMETHING ELSE
       nfa1.trim();
       // this could be wrong I should check it
+      std::cout << "I will try to complement deterministic the nfas\n";
       formula_nfa =
           nfa1.complement_deterministic(mata::utils::OrdVector<mata::Symbol>());
+      std::cout << "I complemented it\n";
     }
     break;
     default: break;
@@ -266,6 +307,7 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
 
 mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
 {
+  dbg(node);
   mata::nfa::Nfa aut;
   std::map<NfaState, unsigned int> nfa_state_to_int;
   auto [assertion_kind, coefficients, vars, c, mod_value] =
@@ -401,7 +443,7 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
     break;
     default: break;
   }
-
+  std::cout << "Build NFA for atomic formula " << node << std::endl;
   return aut;
 }
 
@@ -423,6 +465,7 @@ PreprocessingPassResult Automata::applyInternal(
   std::unordered_set<Node> vars;
   for (const Node& a : assertionsToPreprocess->ref())
   {
+    dbg(a);
     expr::getVariables(a, vars);
     to_process.push_back(a);
   }
@@ -437,6 +480,7 @@ PreprocessingPassResult Automata::applyInternal(
   // to_process.pop_back();  // only removing true formula
 
   int count = 0;
+  std::cout << "starting to build automata" << std::endl;
   for (const Node assertion : to_process)
   {
     // build automata for atomic formula
@@ -452,7 +496,7 @@ PreprocessingPassResult Automata::applyInternal(
     // join with general nfa called automata
     count++;
   }
-  // global_nfa = mata::nfa::minimize(global_nfa);
+  global_nfa.trim();
   global_nfa.print_to_dot(std::cout);
 
   std::cout << (global_nfa.is_lang_empty() ? "automata says unsat"
