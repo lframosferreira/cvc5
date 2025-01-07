@@ -271,17 +271,21 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
   auto [assertion_kind, coefficients, vars, c, mod_value] =
       get_atomic_formula_structure(node);
   unsigned int idx = 0;
+
   switch (assertion_kind)
   {
     case kind::Kind_t::EQUAL:
     {
       NfaState final_state = {0, 1};  // for this particular case we use the mod
                                       // value as a flag for the final state
+      nfa_state_to_int[final_state] =
+          idx++;  // final state is always gonna have index 0
       std::set<NfaState> states_to_process;
 
       aut.initial = {idx};
       nfa_state_to_int[{c, mod_value}] = idx++;
       states_to_process.insert({c, mod_value});
+
       while (!states_to_process.empty())
       {
         // this should remove the first element of the set
@@ -292,21 +296,30 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
         // I already added
         unsigned long number_of_variables =
             static_cast<unsigned long>(vars_to_int.size());
-
         for (unsigned long sigma = 0; sigma < (1UL << number_of_variables);
              sigma++)
         {
           int new_c = state.c;
 
           int acc = 0;
+
           // this can be preocmputed
           for (int i = 0; i < (int)coefficients.size(); i++)
           {
-            acc += coefficients.at(i) * (sigma & (1 << vars_to_int[vars[i]]));
+            acc += coefficients.at(i)
+                   * (sigma & (1 << vars_to_int[vars[i]]) ? 1 : 0);
           }
           new_c -= acc;
-          if (new_c % 2 != 0) continue;  // value is odd, we can continue
-          new_c = divide_by_two_and_floor(new_c);
+          if (new_c % 2 != 0)
+          {
+            continue;  // value is odd, we can continue
+          }
+
+          // if (state.c + acc == 0)
+          // {
+          //   aut.final.insert(nfa_state_to_int[{state.c, state.mod_value}]);
+          // }
+          new_c /= 2;
 
           if (nfa_state_to_int.count({new_c, state.mod_value}) == 0)
           {
@@ -317,15 +330,10 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
           aut.delta.add(nfa_state_to_int[{state.c, state.mod_value}],
                         sigma,
                         nfa_state_to_int[{new_c, state.mod_value}]);
-          if (state.c + acc >= 0)
+          if (state.c + acc == 0)
           {
-            if (aut.final.empty())
-            {
-              std::cout << "adding final state\n";
-              aut.final = {idx};
-              nfa_state_to_int[final_state] = idx++;
-            }
-            aut.delta.add(nfa_state_to_int[{state.c, mod_value}],
+            aut.final.insert(nfa_state_to_int[final_state]);
+            aut.delta.add(nfa_state_to_int[{state.c, state.mod_value}],
                           sigma,
                           nfa_state_to_int[final_state]);
           }
@@ -337,6 +345,8 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
     {
       NfaState final_state = {0, 1};  // for this particular case we use the mod
                                       // value as a flag for the final state
+      nfa_state_to_int[final_state] =
+          idx++;  // final state is always gonna be index 0
       std::set<NfaState> states_to_process;
 
       aut.initial = {idx};
@@ -363,7 +373,8 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
 
           for (int i = 0; i < (int)coefficients.size(); i++)
           {
-            acc += coefficients.at(i) * (sigma & (1 << vars_to_int[vars[i]]));
+            acc += coefficients.at(i)
+                   * (sigma & (1 << vars_to_int[vars[i]]) ? 1 : 0);
           }
           new_c -= acc;
           new_c = divide_by_two_and_floor(new_c);
@@ -379,11 +390,7 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
                         nfa_state_to_int[{new_c, state.mod_value}]);
           if (state.c + acc >= 0)
           {
-            if (aut.final.empty())
-            {
-              aut.final = {idx};
-              nfa_state_to_int[final_state] = idx++;
-            }
+            aut.final.insert(nfa_state_to_int[final_state]);
             aut.delta.add(nfa_state_to_int[{state.c, mod_value}],
                           sigma,
                           nfa_state_to_int[final_state]);
