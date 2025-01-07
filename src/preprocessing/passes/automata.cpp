@@ -31,7 +31,7 @@
 #include "smt/logic_exception.h"
 #include "util/rational.h"
 
-int divide_by_two_and_floor(int k)
+inline int divide_by_two_and_floor(int k)
 {
   return k % 2 == 0 ? k / 2 : (k < 0 ? k / 2 - 1 : k / 2);
 }
@@ -77,19 +77,36 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
     case kind::Kind_t::EQUAL:
     {
       TNode lhs = *aux.begin();
-      for (const auto& val : lhs)
+      // form x = c
+      if (lhs.getKind() == kind::Kind_t::VARIABLE)
       {
-        if (val.getKind() == kind::Kind_t::MULT)
+        vars.push_back(lhs);
+        coefficients.push_back(1);
+      }
+      // form ax = c
+      else if (lhs.getKind() == kind::Kind_t::MULT)
+      {
+        int coef = stoi((*lhs.begin()).getConst<Rational>().toString());
+        coefficients.push_back(coef);
+        vars.push_back((*lhs.rbegin()));
+      }
+      // safely assume a1x1 + ... anxn = c
+      else
+      {
+        for (const auto& val : lhs)
         {
-          vars.push_back(*val.rbegin());
-          int coef = stoi((*val.begin()).getConst<Rational>().toString());
-          coefficients.push_back(coef);
-        }
-        else
-        {
-          // for sure it's a single variable, so it's coefficient is 1
-          vars.push_back(lhs);
-          coefficients.push_back(1);
+          if (val.getKind() == kind::Kind_t::MULT)
+          {
+            vars.push_back(*val.rbegin());
+            int coef = stoi((*val.begin()).getConst<Rational>().toString());
+            coefficients.push_back(coef);
+          }
+          else
+          {
+            // for sure it's a single variable, so it's coefficient is 1
+            vars.push_back(lhs);
+            coefficients.push_back(1);
+          }
         }
       }
 
@@ -111,19 +128,37 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
     case kind::Kind_t::LEQ:
     {
       TNode lhs = *aux.begin();
-      for (const auto& val : lhs)
+      // form x <= c
+      if (lhs.getKind() == kind::Kind_t::VARIABLE)
       {
-        if (val.getKind() == kind::Kind_t::MULT)
+        vars.push_back(lhs);
+        coefficients.push_back(1);
+      }
+
+      // form ax <= c
+      else if (lhs.getKind() == kind::Kind_t::MULT)
+      {
+        int coef = stoi((*lhs.begin()).getConst<Rational>().toString());
+        coefficients.push_back(coef);
+        vars.push_back((*lhs.rbegin()));
+      }
+      // safely assume a1x1 + ... anxn = c
+      else
+      {
+        for (const auto& val : lhs)
         {
-          vars.push_back(*val.rbegin());
-          int coef = stoi((*val.begin()).getConst<Rational>().toString());
-          coefficients.push_back(coef);
-        }
-        else
-        {
-          // for sure it's a single variable, so it's coefficient is 1
-          vars.push_back(lhs);
-          coefficients.push_back(1);
+          if (val.getKind() == kind::Kind_t::MULT)
+          {
+            vars.push_back(*val.rbegin());
+            int coef = stoi((*val.begin()).getConst<Rational>().toString());
+            coefficients.push_back(coef);
+          }
+          else
+          {
+            // for sure it's a single variable, so it's coefficient is 1
+            vars.push_back(lhs);
+            coefficients.push_back(1);
+          }
         }
       }
 
@@ -173,7 +208,7 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
   }
   dbg("-------");
   std::cout << node << std::endl;
-  for (int i = 0; i < vars.size(); i++)
+  for (int i = 0; i < (int)vars.size(); i++)
   {
     std::cout << coefficients[i] << " " << vars[i] << std::endl;
   }
@@ -275,9 +310,6 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
 
           if (nfa_state_to_int.count({new_c, state.mod_value}) == 0)
           {
-            std::cout << "adding state to aut\n";
-            dbg(new_c);
-            dbg(idx);
             states_to_process.insert({new_c, state.mod_value});
             aut.add_state(idx);
             nfa_state_to_int[{new_c, state.mod_value}] = idx++;
@@ -290,7 +322,6 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
             if (aut.final.empty())
             {
               std::cout << "adding final state\n";
-              dbg(idx);
               aut.final = {idx};
               nfa_state_to_int[final_state] = idx++;
             }
@@ -402,7 +433,6 @@ PreprocessingPassResult Automata::applyInternal(
   for (const Node assertion : to_process)
   {
     // build automata for atomic formula
-    std::cout << assertion << std::endl;
     mata::nfa::Nfa formula_automata = build_nfa_for_formula(assertion);
     if (count == 0)
     {
@@ -415,7 +445,7 @@ PreprocessingPassResult Automata::applyInternal(
     // join with general nfa called automata
     count++;
   }
-  global_nfa = mata::nfa::minimize(global_nfa);
+  // global_nfa = mata::nfa::minimize(global_nfa);
   global_nfa.print_to_dot(std::cout);
 
   std::cout << (global_nfa.is_lang_empty() ? "automata says unsat"
