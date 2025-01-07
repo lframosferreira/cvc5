@@ -53,10 +53,11 @@ class Automata : public PreprocessingPass
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
   mata::nfa::Nfa build_nfa_for_atomic_formula(const Node& node);
+  mata::nfa::Nfa build_nfa_for_formula(const Node& node);
   bool check_for_nfa_emptiness();
 
  private:
-  mata::nfa::Nfa nfa;
+  mata::nfa::Nfa global_nfa;
   std::unordered_map<Node, unsigned int> vars_to_int;
 };
 

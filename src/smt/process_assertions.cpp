@@ -111,6 +111,11 @@ bool ProcessAssertions::apply(AssertionPipeline& ap)
     return true;
   }
 
+  if (options().smt.automata)
+  {
+    applyPass("automata", ap);
+  }
+
   if (options().bv.bvGaussElim)
   {
     applyPass("bv-gauss", ap);
@@ -136,11 +141,6 @@ bool ProcessAssertions::apply(AssertionPipeline& ap)
       << endl;
 
   Trace("smt") << " assertions     : " << ap.size() << endl;
-
-  if (options().smt.automata)
-  {
-    applyPass("automata", ap);
-  }
 
   if (options().quantifiers.globalNegate)
   {
