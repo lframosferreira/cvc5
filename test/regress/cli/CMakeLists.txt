@@ -1828,6 +1828,7 @@ set(regress_0_tests
   regress0/strings/escchar.smt2
   regress0/strings/foreign-theory-rew-simple.smt2
   regress0/strings/from_code.smt2
+  regress0/strings/from-int-eval.smt2
   regress0/strings/gen-esc-seq.smt2
   regress0/strings/hconst-092618.smt2
   regress0/strings/idof-rewrites.smt2
@@ -2954,6 +2955,7 @@ set(regress_1_tests
   regress1/quantifiers/sygus-inst-lambda.smt2
   regress1/quantifiers/symmetric_unsat_7.smt2
   regress1/quantifiers/tpp-unit-fail-qbv.smt2
+  regress1/quantifiers/ufdt-solve-model-built.smt2
   regress1/quantifiers/var-eq-trigger.smt2
   regress1/quantifiers/var-eq-trigger-simple.smt2
   regress1/quantifiers/z3.620661-no-fv-trigger.smt2
@@ -3290,6 +3292,7 @@ set(regress_1_tests
   regress1/strings/non_termination_regular_expression4.smt2
   regress1/strings/non-terminating-rewrite-aent.smt2
   regress1/strings/norn-13.smt2
+  regress1/strings/norn-153-consume.smt2
   regress1/strings/norn-360.smt2
   regress1/strings/norn-ab.smt2
   regress1/strings/norn-re-inter-none.smt2

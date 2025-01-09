@@ -132,6 +132,7 @@ pyvenv=default
 java_bindings=default
 editline=default
 build_shared=ON
+safe_mode=default
 static_binary=default
 statistics=default
 tracing=default
@@ -341,6 +342,7 @@ do
          testing)         buildtype=Testing;;
          competition)     buildtype=Competition;;
          competition-inc) buildtype=Competition; comp_inc=ON;;
+         safe-mode)       buildtype=Production; safe_mode=ON;;
          *)               die "invalid build type (try -h)";;
        esac
        ;;
@@ -374,6 +376,8 @@ fi
   && cmake_opts="$cmake_opts -DENABLE_ASSERTIONS=$assertions"
 [ $comp_inc != default ] \
   && cmake_opts="$cmake_opts -DENABLE_COMP_INC_TRACK=$comp_inc"
+[ $safe_mode != default ] \
+  && cmake_opts="$cmake_opts -DENABLE_SAFE_MODE=$safe_mode"
 [ $coverage != default ] \
   && cmake_opts="$cmake_opts -DENABLE_COVERAGE=$coverage"
 [ $debug_symbols != default ] \
