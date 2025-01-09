@@ -16,6 +16,7 @@
 
 #include "preprocessing/passes/automata.h"
 
+#include <alphabet.hh>
 #include <cmath>
 #include <iterator>
 #include <mata/nfa/nfa.hh>
@@ -110,8 +111,10 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
             int coef;
             if ((*val.begin()).getKind() == kind::Kind_t::NEG)
             {
-              coef = stoi(
-                  (*(*val.begin()).begin()).getConst<Rational>().toString());
+              coef = -1
+                     * stoi((*(*val.begin()).begin())
+                                .getConst<Rational>()
+                                .toString());
             }
             else  // almost sure is a alone value for coefficient
             {
@@ -161,7 +164,8 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
         if ((*lhs.begin()).getKind() == kind::Kind_t::NEG)
         {
           coef =
-              stoi((*(*lhs.begin()).begin()).getConst<Rational>().toString());
+              -1
+              * stoi((*(*lhs.begin()).begin()).getConst<Rational>().toString());
         }
         else  // almost sure is a alone value for coefficient
         {
@@ -181,8 +185,10 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
             int coef;
             if ((*val.begin()).getKind() == kind::Kind_t::NEG)
             {
-              coef = stoi(
-                  (*(*val.begin()).begin()).getConst<Rational>().toString());
+              coef = -1
+                     * stoi((*(*val.begin()).begin())
+                                .getConst<Rational>()
+                                .toString());
             }
             else  // almost sure is a alone value for coefficient
             {
@@ -243,15 +249,15 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
     }
     default: break;
   }
-  // dbg("-------");
-  // std::cout << node << std::endl;
-  // for (int i = 0; i < (int)vars.size(); i++)
-  // {
-  //   std::cout << coefficients[i] << " " << vars[i] << std::endl;
-  // }
-  // dbg(c);
-  //
-  // dbg("-------");
+  dbg("-------");
+  std::cout << node << std::endl;
+  for (int i = 0; i < (int)vars.size(); i++)
+  {
+    std::cout << coefficients[i] << " " << vars[i] << std::endl;
+  }
+  dbg(c);
+
+  dbg("-------");
   return {node.getKind(), coefficients, vars, c, mod_value};
 }
 
@@ -447,6 +453,41 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
   return aut;
 }
 
+std::map<Node, int> Automata::get_posible_solution()
+{
+  std::map<Node, int> solution;
+  for (auto& [var, _] : vars_to_int)
+  {
+    solution.insert({var, 0});
+  }
+  if (auto word = global_nfa.get_word())
+  {
+    for (int i = 0; i < (int)word->size(); i++)
+    {
+      int symbol = word->at(i);
+      for (auto [var, var_idx] : vars_to_int)
+      {
+        solution[var] |= symbol & (1 << var_idx) ? 1 << i : 0;
+        if (i == (int)word->size() - 1 && (symbol & (1 << var_idx)))
+        {
+          // bruting number of bits in int (32)
+          for (int k = i + 1; k < (int)sizeof(int) * 8; k++)
+          {
+            solution[var] |= 1 << k;
+          }
+        }
+      }
+    }
+  }
+
+  for (auto& [var, value] : solution)
+  {
+    std::cout << std::bitset<32>(value) << std::endl;
+    std::cout << var << " " << value << std::endl;
+  }
+  return solution;
+}
+
 Automata::Automata(PreprocessingPassContext* preprocContext)
     : PreprocessingPass(preprocContext, "automata")
 {
@@ -476,6 +517,10 @@ PreprocessingPassResult Automata::applyInternal(
   {
     vars_to_int[a] = idx++;
   }
+  for (auto& [var, vint] : vars_to_int)
+  {
+    std::cout << var << " " << vint << std::endl;
+  }
 
   // to_process.pop_back();  // only removing true formula
 
@@ -493,15 +538,16 @@ PreprocessingPassResult Automata::applyInternal(
     {
       global_nfa = mata::nfa::intersection(global_nfa, formula_automata);
     }
-    // join with general nfa called automata
     count++;
   }
   global_nfa.trim();
+  // global_nfa = mata::nfa::minimize(global_nfa);
   global_nfa.print_to_dot(std::cout);
 
   std::cout << (global_nfa.is_lang_empty() ? "automata says unsat"
                                            : "automata says sat")
             << std::endl;
+  get_posible_solution();
   return PreprocessingPassResult::NO_CONFLICT;
 }
 

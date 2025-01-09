@@ -54,7 +54,7 @@ class Automata : public PreprocessingPass
       AssertionPipeline* assertionsToPreprocess) override;
   mata::nfa::Nfa build_nfa_for_atomic_formula(const Node& node);
   mata::nfa::Nfa build_nfa_for_formula(const Node& node);
-  bool check_for_nfa_emptiness();
+  std::map<Node, int> get_posible_solution();
 
  private:
   mata::nfa::Nfa global_nfa;

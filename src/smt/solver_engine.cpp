@@ -197,7 +197,8 @@ void SolverEngine::finishInit()
                != options::ProofGranularityMode::DSL_REWRITE)
     {
       Warning() << "WARNING: -o rare-db requires --produce-proofs and "
-                   "--proof-granularity=dsl-rewrite" << std::endl;
+                   "--proof-granularity=dsl-rewrite"
+                << std::endl;
     }
   }
   // enable proof support in the environment/rewriter
@@ -258,7 +259,6 @@ void SolverEngine::shutdown()
 
 SolverEngine::~SolverEngine()
 {
-
   try
   {
     shutdown();
@@ -289,7 +289,8 @@ SolverEngine::~SolverEngine()
   }
   catch (Exception& e)
   {
-    d_env->warning() << "cvc5 threw an exception during cleanup." << std::endl << e << std::endl;
+    d_env->warning() << "cvc5 threw an exception during cleanup." << std::endl
+                     << e << std::endl;
   }
 }
 
@@ -359,9 +360,10 @@ void SolverEngine::setInfo(const std::string& key, const std::string& value)
   {
     if (value != "2" && value != "2.6")
     {
-      d_env->warning() << "SMT-LIB version " << value
-                << " unsupported, defaulting to language (and semantics of) "
-                   "SMT-LIB 2.6\n";
+      d_env->warning()
+          << "SMT-LIB version " << value
+          << " unsupported, defaulting to language (and semantics of) "
+             "SMT-LIB 2.6\n";
     }
     getOptions().write_base().inputLanguage = Language::LANG_SMTLIB_V2_6;
     // also update the output language
@@ -705,6 +707,7 @@ TheoryModel* SolverEngine::getAvailableModel(const char* c) const
     // we get the assertions using the getAssertionsInternal, which does not
     // impact whether we are in "sat" mode
     std::vector<Node> asserts = getAssertionsInternal();
+
     d_smtSolver->getPreprocessor()->applySubstitutions(asserts);
     ModelCoreBuilder mcb(*d_env.get());
     mcb.setModelCore(asserts, m, opts.smt.modelCoresMode);
@@ -1218,8 +1221,8 @@ Node SolverEngine::getValue(const Node& t) const
   // holds for models that do not have approximate values.
   if (!m->isValue(resultNode))
   {
-    d_env->warning() << "Could not evaluate " << resultNode
-                     << " in getValue." << std::endl;
+    d_env->warning() << "Could not evaluate " << resultNode << " in getValue."
+                     << std::endl;
   }
 
   if (d_env->getOptions().smt.abstractValues)
@@ -1632,9 +1635,10 @@ void SolverEngine::checkUnsatCore()
                     << std::endl;
   if (r.isUnknown())
   {
-    d_env->warning() << "SolverEngine::checkUnsatCore(): could not check core result "
-                 "unknown."
-              << std::endl;
+    d_env->warning()
+        << "SolverEngine::checkUnsatCore(): could not check core result "
+           "unknown."
+        << std::endl;
   }
   else if (r.getStatus() == Result::SAT)
   {
@@ -1799,8 +1803,7 @@ std::vector<std::shared_ptr<ProofNode>> SolverEngine::getProof(
 void SolverEngine::proofToString(std::ostream& out,
                                  std::shared_ptr<ProofNode> fp)
 {
-  options::ProofFormatMode format_mode =
-      getOptions().proof.proofFormatMode;
+  options::ProofFormatMode format_mode = getOptions().proof.proofFormatMode;
   d_pfManager->printProof(
       out, fp, format_mode, ProofScopeMode::DEFINITIONS_AND_ASSERTIONS);
 }
@@ -2192,13 +2195,14 @@ void SolverEngine::setOption(const std::string& key,
         for (size_t i = 0; i < 2; i++)
         {
           const std::string& rkey = i == 0 ? d_safeOptsRegularOption : key;
-          const std::string& rvalue = i == 0 ? d_safeOptsRegularOptionValue : value;
+          const std::string& rvalue =
+              i == 0 ? d_safeOptsRegularOptionValue : value;
           bool isDefault = i == 0 ? d_safeOptsSetRegularOptionToDefault
                                   : (getOption(key) == value);
           if (isDefault)
           {
-            ss << " The value for " << rkey
-               << " is already its current value (" << rvalue
+            ss << " The value for " << rkey << " is already its current value ("
+               << rvalue
                << "). Omitting this option will avoid this exception.";
           }
         }
