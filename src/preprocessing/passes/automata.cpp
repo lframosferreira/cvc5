@@ -261,6 +261,75 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
   return {node.getKind(), coefficients, vars, c, mod_value};
 }
 
+// We are basically setting the bit of the variable to 0 in every track
+void Automata::project_variable(mata::nfa::Nfa& nfa, const Node& var)
+{
+  int var_idx = vars_to_int[var];
+  nfa.trim();
+  for (int state = 0; state < nfa.num_of_states(); state++)
+  {
+    for (auto& trans : nfa.delta.mutable_state_post(state))
+    {
+      trans.symbol &= ~(1 << var_idx);
+    }
+  }
+}
+
+void Automata::perform_pad_closure(mata::nfa::Nfa& nfa, const Node& var)
+{
+  std::set<int> states_to_process;
+  nfa.trim();
+  int var_idx = vars_to_int[var];
+  int number_of_variables = static_cast<int>(vars_to_int.size());
+  int qf = nfa.num_of_states() + 1;
+  for (unsigned long sigma = 0; sigma < (1UL << number_of_variables); sigma++)
+  {
+    if (sigma & (1 << var_idx))
+      continue;  // we want to ignore tracks that use the projected away
+                 // variable
+    std::set<int> S;
+    for (const auto& final_state : nfa.final)
+    {
+      for (const auto& trans : nfa.delta.get_transitions_to(final_state))
+      {
+        states_to_process.insert(trans.source);
+      }
+    }
+    while (!states_to_process.empty())
+    {
+      int next_state = *states_to_process.begin();
+      states_to_process.erase(std::next(states_to_process.begin(), 0));
+      S.insert(next_state);
+
+      for (const auto& trans : nfa.delta.get_transitions_to(next_state))
+      {
+        if (S.find(trans.source) == S.end())
+        {
+          states_to_process.insert(trans.source);
+        }
+      }
+    }
+    for (const auto& q : S)
+    {
+      bool should_add = true;
+      for (const auto& final_state : nfa.final)
+      {
+        for (const auto& trans : nfa.delta.get_transitions_to(final_state))
+        {
+          if (trans.source == q && trans.symbol == sigma)
+          {
+            should_add = false;
+          }
+        }
+      }
+      if (should_add)
+      {
+        nfa.delta.add(q, sigma, qf);
+      }
+    }
+  }
+}
+
 mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
 {
   mata::nfa::Nfa formula_nfa;
@@ -300,10 +369,24 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
                            // COULD BE SOMETHING ELSE
       nfa1.trim();
       // this could be wrong I should check it
-      std::cout << "I will try to complement deterministic the nfas\n";
+      std::cout << "I will try to complement deterministic the nfa\n";
       formula_nfa =
           nfa1.complement_deterministic(mata::utils::OrdVector<mata::Symbol>());
       std::cout << "I complemented it\n";
+    }
+    break;
+    case kind::Kind_t::EXISTS:
+    {
+      dbg(node);
+      dbg(*node.begin());  // variable to project out
+      Node projected_var = *(*node.begin()).begin();
+      dbg(projected_var);
+      dbg(*node.rbegin());  // formula
+      auto nfa1 = build_nfa_for_formula(*node.rbegin());
+      // project x out of nfa1
+      project_variable(nfa1, projected_var);
+      perform_pad_closure(nfa1, projected_var);
+      formula_nfa = nfa1;
     }
     break;
     default: break;
@@ -482,7 +565,7 @@ std::map<Node, int> Automata::get_posible_solution()
 
   for (auto& [var, value] : solution)
   {
-    // std::cout << std::bitset<32>(value) << std::endl;
+    std::cout << std::bitset<32>(value) << std::endl;
     std::cout << var << " " << value << std::endl;
   }
   return solution;

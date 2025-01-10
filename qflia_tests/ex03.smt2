@@ -1,0 +1,15 @@
+(set-logic LIA)
+(declare-fun w () Int)
+(declare-fun x () Int)
+(declare-fun y () Int)
+(declare-fun z () Int)
+(assert
+  (and
+    (<= (* (- 1) x) (- 1))
+    (<= (* 1 y) 9)
+    (<= (* (- 1) w) (- 5))
+    (= (+ (* 1 x) (* 1 y) (* (- 2) z)) 0)
+    (<= (+ (* 1 w) (* 1 z)) 15)
+  )
+)
+(check-sat)
