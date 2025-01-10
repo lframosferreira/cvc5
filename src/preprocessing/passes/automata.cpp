@@ -249,15 +249,15 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
     }
     default: break;
   }
-  dbg("-------");
-  std::cout << node << std::endl;
-  for (int i = 0; i < (int)vars.size(); i++)
-  {
-    std::cout << coefficients[i] << " " << vars[i] << std::endl;
-  }
-  dbg(c);
-
-  dbg("-------");
+  // dbg("-------");
+  // std::cout << node << std::endl;
+  // for (int i = 0; i < (int)vars.size(); i++)
+  // {
+  //   std::cout << coefficients[i] << " " << vars[i] << std::endl;
+  // }
+  // dbg(c);
+  //
+  // dbg("-------");
   return {node.getKind(), coefficients, vars, c, mod_value};
 }
 
@@ -482,7 +482,7 @@ std::map<Node, int> Automata::get_posible_solution()
 
   for (auto& [var, value] : solution)
   {
-    std::cout << std::bitset<32>(value) << std::endl;
+    // std::cout << std::bitset<32>(value) << std::endl;
     std::cout << var << " " << value << std::endl;
   }
   return solution;
@@ -517,10 +517,6 @@ PreprocessingPassResult Automata::applyInternal(
   {
     vars_to_int[a] = idx++;
   }
-  for (auto& [var, vint] : vars_to_int)
-  {
-    std::cout << var << " " << vint << std::endl;
-  }
 
   // to_process.pop_back();  // only removing true formula
 
@@ -542,7 +538,7 @@ PreprocessingPassResult Automata::applyInternal(
   }
   global_nfa.trim();
   // global_nfa = mata::nfa::minimize(global_nfa);
-  global_nfa.print_to_dot(std::cout);
+  // global_nfa.print_to_dot(std::cout);
 
   std::cout << (global_nfa.is_lang_empty() ? "automata says unsat"
                                            : "automata says sat")
