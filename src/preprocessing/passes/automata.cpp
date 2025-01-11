@@ -289,19 +289,25 @@ void Automata::perform_pad_closure(
   {
     flag |= 1 << vars_to_int[var];
   }
+  std::cout << std::bitset<8>(flag) << std::endl;
   int number_of_variables = static_cast<int>(vars_to_int.size());
-  int qf = nfa.num_of_states() + 1;
+  int qf = nfa.num_of_states();
+
+  std::vector<std::tuple<int, int, int>> transitions_to_add;
   for (unsigned long sigma = 0; sigma < (1UL << number_of_variables); sigma++)
   {
     if (sigma & flag)
+    {
       continue;  // we want to ignore tracks that use the projected away
-                 // variable
+                 // variables
+    }
     std::set<int> S;
     for (const auto& final_state : nfa.final)
     {
+      if (final_state == qf) continue;
       for (const auto& trans : nfa.delta.get_transitions_to(final_state))
       {
-        states_to_process.insert(trans.source);
+        if (trans.symbol == sigma) states_to_process.insert(trans.source);
       }
     }
     while (!states_to_process.empty())
@@ -312,6 +318,7 @@ void Automata::perform_pad_closure(
 
       for (const auto& trans : nfa.delta.get_transitions_to(next_state))
       {
+        if (trans.symbol != sigma) continue;
         if (S.find(trans.source) == S.end())
         {
           states_to_process.insert(trans.source);
@@ -323,6 +330,7 @@ void Automata::perform_pad_closure(
       bool should_add = true;
       for (const auto& final_state : nfa.final)
       {
+        if (final_state == qf) continue;
         for (const auto& trans : nfa.delta.get_transitions_to(final_state))
         {
           if (trans.source == q && trans.symbol == sigma)
@@ -334,10 +342,13 @@ void Automata::perform_pad_closure(
       if (should_add)
       {
         nfa.final.insert(qf);
-        nfa.delta.add(q, sigma, qf);
+        // nfa.delta.add(q, sigma, qf);
+        transitions_to_add.push_back({q, sigma, qf});
       }
     }
   }
+  for (const auto& [from, symb, to] : transitions_to_add)
+    nfa.delta.add(from, symb, to);
 }
 
 mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
@@ -352,6 +363,7 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
     case kind::Kind_t::INTS_MODULUS_TOTAL:
     {
       formula_nfa = build_nfa_for_atomic_formula(node);
+      // formula_nfa.print_to_dot(std::cout);
     }
     break;
     case kind::Kind_t::OR:
@@ -370,6 +382,7 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       auto nfa2 = build_nfa_for_formula(*node.rbegin());
       formula_nfa = mata::nfa::intersection(nfa1, nfa2);
       std::cout << "intersected nfas" << std::endl;
+      // formula_nfa.print_to_dot(std::cout);
     }
     break;
     case kind::Kind_t::NOT:
@@ -380,12 +393,9 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       nfa1.trim();
       // this could be wrong I should check it
       std::cout << "I will try to complement deterministic the nfa\n";
-      // formula_nfa =
-      //     nfa1.complement_deterministic(nfa1.alphabet->get_alphabet_symbols());
-      mata::OnTheFlyAlphabet alph{};
       formula_nfa =
           mata::nfa::complement(nfa1, mata::nfa::create_alphabet(nfa1));
-      nfa1.print_to_dot(std::cout);
+      // formula_nfa.print_to_dot(std::cout);
       std::cout << "I complemented it\n";
     }
     break;
@@ -397,10 +407,6 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       for (auto var : *node.begin())
       {
         variables_to_project.push_back(var);
-      }
-      for (auto& e : variables_to_project)
-      {
-        dbg(e);
       }
       dbg(*node.rbegin());  // formula
       auto nfa1 = build_nfa_for_formula(*node.rbegin());
@@ -560,35 +566,38 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
 std::map<Node, int> Automata::get_posible_solution()
 {
   std::map<Node, int> solution;
-  for (auto& [var, _] : vars_to_int)
+  for (const auto& word : global_nfa.get_words(8))
   {
-    solution.insert({var, 0});
-  }
-  if (auto word = global_nfa.get_word())
-  {
-    for (int i = 0; i < (int)word->size(); i++)
+    solution.clear();
+    for (auto& [var, _] : vars_to_int)
     {
-      int symbol = word->at(i);
-      for (auto [var, var_idx] : vars_to_int)
+      solution.insert({var, 0});
+    }
+    // if (auto word = global_nfa.get_word())
+    {
+      for (int i = 0; i < (int)word.size(); i++)
       {
-        solution[var] |= symbol & (1 << var_idx) ? 1 << i : 0;
-        if (i == (int)word->size() - 1 && (symbol & (1 << var_idx)))
+        int symbol = word.at(i);
+        for (auto [var, var_idx] : vars_to_int)
         {
-          // bruting number of bits in int (32)
-          for (int k = i + 1; k < (int)sizeof(int) * 8; k++)
+          solution[var] |= symbol & (1 << var_idx) ? 1 << i : 0;
+          if (i == (int)word.size() - 1 && (symbol & (1 << var_idx)))
           {
-            solution[var] |= 1 << k;
+            for (int k = i + 1; k < (int)sizeof(int) * 8; k++)
+            {
+              solution[var] |= 1 << k;
+            }
           }
         }
       }
     }
   }
-
   for (auto& [var, value] : solution)
   {
     std::cout << std::bitset<32>(value) << std::endl;
     std::cout << var << " " << value << std::endl;
   }
+
   return solution;
 }
 
@@ -620,6 +629,8 @@ PreprocessingPassResult Automata::applyInternal(
   for (const Node& a : vars)
   {
     vars_to_int[a] = idx++;
+    // dbg(a);
+    // dbg(vars_to_int[a]);
   }
 
   // to_process.pop_back();  // only removing true formula
@@ -638,11 +649,12 @@ PreprocessingPassResult Automata::applyInternal(
     {
       global_nfa = mata::nfa::intersection(global_nfa, formula_automata);
     }
+    // formula_automata.print_to_dot(std::cout);
+    // global_nfa.print_to_dot(std::cout);
     count++;
   }
   global_nfa.trim();
   // global_nfa = mata::nfa::minimize(global_nfa);
-  // global_nfa.print_to_dot(std::cout);
 
   std::cout << (global_nfa.is_lang_empty() ? "automata says unsat"
                                            : "automata says sat")

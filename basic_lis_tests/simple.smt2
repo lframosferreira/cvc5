@@ -2,5 +2,5 @@
 
 (declare-fun x () Int)
 ; (declare-const y Int)
-(assert (= x 4))
+(assert (not (= x 4)))
 (check-sat)
