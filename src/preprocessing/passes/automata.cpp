@@ -289,6 +289,9 @@ void Automata::perform_pad_closure(
   {
     flag |= 1 << vars_to_int[var];
   }
+  flag = 0;
+  auto cmp = [&flag](int a, int b) { return ((~flag) & a) == ((~flag) & b); };
+
   std::cout << std::bitset<8>(flag) << std::endl;
   int number_of_variables = static_cast<int>(vars_to_int.size());
   int qf = nfa.num_of_states();
@@ -296,18 +299,13 @@ void Automata::perform_pad_closure(
   std::vector<std::tuple<int, int, int>> transitions_to_add;
   for (unsigned long sigma = 0; sigma < (1UL << number_of_variables); sigma++)
   {
-    if (sigma & flag)
-    {
-      continue;  // we want to ignore tracks that use the projected away
-                 // variables
-    }
     std::set<int> S;
     for (const auto& final_state : nfa.final)
     {
       if (final_state == qf) continue;
       for (const auto& trans : nfa.delta.get_transitions_to(final_state))
       {
-        if (trans.symbol == sigma) states_to_process.insert(trans.source);
+        if (cmp(trans.symbol, sigma)) states_to_process.insert(trans.source);
       }
     }
     while (!states_to_process.empty())
@@ -318,7 +316,7 @@ void Automata::perform_pad_closure(
 
       for (const auto& trans : nfa.delta.get_transitions_to(next_state))
       {
-        if (trans.symbol != sigma) continue;
+        if (!cmp(trans.symbol, sigma)) continue;
         if (S.find(trans.source) == S.end())
         {
           states_to_process.insert(trans.source);
@@ -333,9 +331,10 @@ void Automata::perform_pad_closure(
         if (final_state == qf) continue;
         for (const auto& trans : nfa.delta.get_transitions_to(final_state))
         {
-          if (trans.source == q && trans.symbol == sigma)
+          if (trans.source == q && cmp(trans.symbol, sigma))
           {
             should_add = false;
+            break;
           }
         }
       }
@@ -410,8 +409,7 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       }
       dbg(*node.rbegin());  // formula
       auto nfa1 = build_nfa_for_formula(*node.rbegin());
-      // project x out of nfa1
-      project_variable(nfa1, variables_to_project);
+      // project_variable(nfa1, variables_to_project);
       perform_pad_closure(nfa1, variables_to_project);
       formula_nfa = nfa1;
     }
@@ -566,38 +564,34 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
 std::map<Node, int> Automata::get_posible_solution()
 {
   std::map<Node, int> solution;
-  for (const auto& word : global_nfa.get_words(8))
+  for (auto& [var, _] : vars_to_int)
   {
-    solution.clear();
-    for (auto& [var, _] : vars_to_int)
+    solution.insert({var, 0});
+  }
+  if (auto word = global_nfa.get_word())
+  {
+    for (int i = 0; i < (int)word->size(); i++)
     {
-      solution.insert({var, 0});
-    }
-    // if (auto word = global_nfa.get_word())
-    {
-      for (int i = 0; i < (int)word.size(); i++)
+      int symbol = word->at(i);
+      for (auto [var, var_idx] : vars_to_int)
       {
-        int symbol = word.at(i);
-        for (auto [var, var_idx] : vars_to_int)
+        solution[var] |= symbol & (1 << var_idx) ? 1 << i : 0;
+        if (i == (int)word->size() - 1 && (symbol & (1 << var_idx)))
         {
-          solution[var] |= symbol & (1 << var_idx) ? 1 << i : 0;
-          if (i == (int)word.size() - 1 && (symbol & (1 << var_idx)))
+          for (int k = i + 1; k < (int)sizeof(int) * 8; k++)
           {
-            for (int k = i + 1; k < (int)sizeof(int) * 8; k++)
-            {
-              solution[var] |= 1 << k;
-            }
+            solution[var] |= 1 << k;
           }
         }
       }
     }
   }
+
   for (auto& [var, value] : solution)
   {
-    std::cout << std::bitset<32>(value) << std::endl;
+    // std::cout << std::bitset<32>(value) << std::endl;
     std::cout << var << " " << value << std::endl;
   }
-
   return solution;
 }
 
@@ -650,7 +644,7 @@ PreprocessingPassResult Automata::applyInternal(
       global_nfa = mata::nfa::intersection(global_nfa, formula_automata);
     }
     // formula_automata.print_to_dot(std::cout);
-    // global_nfa.print_to_dot(std::cout);
+    global_nfa.print_to_dot(std::cout);
     count++;
   }
   global_nfa.trim();
@@ -659,7 +653,7 @@ PreprocessingPassResult Automata::applyInternal(
   std::cout << (global_nfa.is_lang_empty() ? "automata says unsat"
                                            : "automata says sat")
             << std::endl;
-  get_posible_solution();
+  if (!global_nfa.is_lang_empty()) get_posible_solution();
   return PreprocessingPassResult::NO_CONFLICT;
 }
 
