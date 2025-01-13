@@ -302,7 +302,6 @@ void Automata::perform_pad_closure(
     std::set<int> S;
     for (const auto& final_state : nfa.final)
     {
-      if (final_state == qf) continue;
       for (const auto& trans : nfa.delta.get_transitions_to(final_state))
       {
         if (cmp(trans.symbol, sigma)) states_to_process.insert(trans.source);
@@ -328,7 +327,6 @@ void Automata::perform_pad_closure(
       bool should_add = true;
       for (const auto& final_state : nfa.final)
       {
-        if (final_state == qf) continue;
         for (const auto& trans : nfa.delta.get_transitions_to(final_state))
         {
           if (trans.source == q && cmp(trans.symbol, sigma))
@@ -340,12 +338,12 @@ void Automata::perform_pad_closure(
       }
       if (should_add)
       {
-        nfa.final.insert(qf);
         // nfa.delta.add(q, sigma, qf);
-        transitions_to_add.push_back({q, sigma, qf});
+        transitions_to_add.push_back({q, (~flag) & sigma, qf});
       }
     }
   }
+  if (!transitions_to_add.empty()) nfa.final.insert(qf);
   for (const auto& [from, symb, to] : transitions_to_add)
     nfa.delta.add(from, symb, to);
 }
@@ -392,8 +390,10 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       nfa1.trim();
       // this could be wrong I should check it
       std::cout << "I will try to complement deterministic the nfa\n";
-      formula_nfa =
-          mata::nfa::complement(nfa1, mata::nfa::create_alphabet(nfa1));
+      formula_nfa = mata::nfa::complement(
+          nfa1,
+          mata::nfa::create_alphabet(nfa1),
+          {{"algorithm", "classical"}, {"minimize", "true"}});
       // formula_nfa.print_to_dot(std::cout);
       std::cout << "I complemented it\n";
     }
@@ -408,10 +408,9 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
         variables_to_project.push_back(var);
       }
       dbg(*node.rbegin());  // formula
-      auto nfa1 = build_nfa_for_formula(*node.rbegin());
-      // project_variable(nfa1, variables_to_project);
-      perform_pad_closure(nfa1, variables_to_project);
-      formula_nfa = nfa1;
+      formula_nfa = build_nfa_for_formula(*node.rbegin());
+      project_variable(formula_nfa, variables_to_project);
+      perform_pad_closure(formula_nfa, variables_to_project);
     }
     break;
     default: break;
