@@ -33,6 +33,7 @@
 #include "smt/difficulty_post_processor.h"
 #include "smt/env.h"
 #include "smt/preprocess_proof_generator.h"
+#include "smt/proof_logger.h"
 #include "smt/proof_post_processor.h"
 #include "smt/smt_solver.h"
 
@@ -162,6 +163,11 @@ PfManager::~PfManager() {}
 //   c.erase(it, c.end());
 //   return r;
 // }
+
+void PfManager::startProofLogging(std::ostream& out, Assertions& as)
+{
+  Unimplemented() << "Not yet implemented" << std::endl;
+}
 
 std::shared_ptr<ProofNode> PfManager::connectProofToAssertions(
     std::shared_ptr<ProofNode> pfn, Assertions& as, ProofScopeMode scopeMode)
@@ -422,6 +428,8 @@ void PfManager::translateDifficultyMap(std::map<Node, Node>& dmap,
 ProofChecker* PfManager::getProofChecker() const { return d_pchecker.get(); }
 
 ProofNodeManager* PfManager::getProofNodeManager() const { return d_pnm.get(); }
+
+ProofLogger* PfManager::getProofLogger() const { return d_plog.get(); }
 
 rewriter::RewriteDb* PfManager::getRewriteDatabase() const
 {
