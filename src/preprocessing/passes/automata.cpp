@@ -263,33 +263,34 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
 
 // We are basically setting the bit of the variable to 0 in every track
 void Automata::project_variable(mata::nfa::Nfa& nfa,
-                                const std::vector<Node>& variables_to_project)
+                                const Node& variable_to_project)
 {
   nfa.trim();
-  for (const auto& var : variables_to_project)
+  unsigned long var_idx = vars_to_int[variable_to_project];
+  std::vector<std::tuple<int, int, int>> transitions_to_add;
+  for (unsigned long state = 0; state < nfa.num_of_states(); state++)
   {
-    unsigned long var_idx = vars_to_int[var];
-    for (unsigned long state = 0; state < nfa.num_of_states(); state++)
+    for (auto& trans : nfa.delta.mutable_state_post(state))
     {
-      for (auto& trans : nfa.delta.mutable_state_post(state))
+      for (auto& tgt : trans.targets)
       {
-        trans.symbol &= ~(1UL << var_idx);
+        transitions_to_add.push_back(
+            {state, trans.symbol ^ (1UL << var_idx), tgt});
       }
     }
   }
-  nfa.trim();
+  for (auto& [from, symb, to] : transitions_to_add)
+  {
+    nfa.delta.add(from, symb, to);
+  }
 }
 
-void Automata::perform_pad_closure(
-    mata::nfa::Nfa& nfa, const std::vector<Node>& variables_to_project)
+void Automata::perform_pad_closure(mata::nfa::Nfa& nfa,
+                                   const Node& variable_to_project)
 {
   std::set<unsigned long> states_to_process;
   nfa.trim();
-  unsigned long flag = 0;
-  for (const auto& var : variables_to_project)
-  {
-    flag |= 1 << vars_to_int[var];
-  }
+  unsigned long flag = 1UL << vars_to_int[variable_to_project];
   auto cmp = [&flag](unsigned long a, unsigned long b) {
     return ((~flag) & a) == ((~flag) & b);
   };
@@ -297,7 +298,7 @@ void Automata::perform_pad_closure(
   std::cout << std::bitset<8>(flag) << std::endl;
   unsigned long number_of_variables =
       static_cast<unsigned long>(vars_to_int.size());
-  unsigned long qf = nfa.num_of_states() + 3;
+  unsigned long qf = nfa.num_of_states();
 
   std::vector<std::tuple<int, int, int>> transitions_to_add;
   for (unsigned long sigma = 0; sigma < (1UL << number_of_variables); sigma++)
@@ -318,7 +319,7 @@ void Automata::perform_pad_closure(
 
       for (const auto& trans : nfa.delta.get_transitions_to(next_state))
       {
-        if (cmp(trans.symbol, sigma)) continue;
+        if (!cmp(trans.symbol, sigma)) continue;
         if (S.find(trans.source) == S.end())
         {
           states_to_process.insert(trans.source);
@@ -342,7 +343,7 @@ void Automata::perform_pad_closure(
       if (should_add)
       {
         // nfa.delta.add(q, sigma, qf);
-        transitions_to_add.push_back({q, (~flag) & sigma, qf});
+        transitions_to_add.push_back({q, sigma, qf});
       }
     }
   }
@@ -395,9 +396,9 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       formula_nfa = nfa1;
 
       mata::utils::OrdVector<mata::Symbol> alph;
-      for (int i = 0; i < vars_to_int.size(); i++) alph.push_back(i);
+      for (int i = 0; i < (1 << vars_to_int.size()); i++) alph.push_back(i);
       formula_nfa = mata::nfa::complement(
-          formula_nfa, alph, {{"algorithm", "brzozowski"}});
+          formula_nfa, alph, {{"algorithm", "classical"}});
 
       std::cout << "I complemented it\n";
     }
@@ -414,8 +415,17 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       }
       dbg(*node.rbegin());  // formula
       formula_nfa = build_nfa_for_formula(*node.rbegin());
-      // project_variable(formula_nfa, variables_to_project);
-      perform_pad_closure(formula_nfa, variables_to_project);
+      int yu = 0;
+      mata::nfa::minimize(formula_nfa);
+      for (const auto& variable_to_project : variables_to_project)
+      {
+        project_variable(formula_nfa, variable_to_project);
+      }
+      for (const auto& variable_to_project : variables_to_project)
+      {
+        perform_pad_closure(formula_nfa, variable_to_project);
+      }
+      formula_nfa.print_to_dot(std::cout);
     }
     break;
     default: break;
@@ -687,7 +697,7 @@ PreprocessingPassResult Automata::applyInternal(
   }
   global_nfa.trim();
   // global_nfa = mata::nfa::minimize(global_nfa);
-  global_nfa.print_to_dot(std::cout);
+  // global_nfa.print_to_dot(std::cout);
 
   std::cout << (global_nfa.is_lang_empty() ? "automata says unsat"
                                            : "automata says sat")

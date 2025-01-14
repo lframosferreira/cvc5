@@ -54,10 +54,9 @@ class Automata : public PreprocessingPass
       AssertionPipeline* assertionsToPreprocess) override;
   mata::nfa::Nfa build_nfa_for_atomic_formula(const Node& node);
   mata::nfa::Nfa build_nfa_for_formula(const Node& node);
-  void project_variable(mata::nfa::Nfa& nfa,
-                        const std::vector<Node>& variables_to_project);
+  void project_variable(mata::nfa::Nfa& nfa, const Node& variable_to_project);
   void perform_pad_closure(mata::nfa::Nfa& nfa,
-                           const std::vector<Node>& variables_to_project);
+                           const Node& variable_to_project);
   std::map<Node, int> get_posible_solutions();
   std::map<Node, int> get_single_solution();
 
