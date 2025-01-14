@@ -58,7 +58,8 @@ class Automata : public PreprocessingPass
                         const std::vector<Node>& variables_to_project);
   void perform_pad_closure(mata::nfa::Nfa& nfa,
                            const std::vector<Node>& variables_to_project);
-  std::map<Node, int> get_posible_solution();
+  std::map<Node, int> get_posible_solutions();
+  std::map<Node, int> get_single_solution();
 
  private:
   mata::nfa::Nfa global_nfa;
