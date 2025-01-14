@@ -68,7 +68,7 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
   unsigned int mod_value = 0;
   std::vector<Node> vars;
   std::vector<int> coefficients;
-
+  kind::Kind_t atomic_formula_kind = node.getKind();
   switch (node.getKind())
   {
     // case a1x1 + ... anxn = c
@@ -78,56 +78,120 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
     case kind::Kind_t::EQUAL:
     {
       TNode lhs = *aux.begin();
-      // form x = c
-      if (lhs.getKind() == kind::Kind_t::VARIABLE)
+
+      if (lhs.getKind() == kind::Kind_t::INTS_MODULUS)
       {
-        vars.push_back(lhs);
-        coefficients.push_back(1);
-      }
-      // form ax = c
-      else if (lhs.getKind() == kind::Kind_t::MULT)
-      {
-        int coef;
-        if ((*lhs.begin()).getKind() == kind::Kind_t::NEG)
+        atomic_formula_kind = kind::Kind_t::INTS_MODULUS;
+        mod_value = stoi((*lhs.rbegin()).getConst<Rational>().toString());
+        lhs = *lhs.begin();
+        if (lhs.getKind() == kind::Kind_t::VARIABLE)
         {
-          coef =
-              stoi((*(*lhs.begin()).begin()).getConst<Rational>().toString());
+          vars.push_back(lhs);
+          coefficients.push_back(1);
         }
-        else  // almost sure is a alone value for coefficient
+        else if (lhs.getKind() == kind::Kind_t::MULT)
         {
-          coef = stoi((*lhs.begin()).getConst<Rational>().toString());
+          int coef;
+          if ((*lhs.begin()).getKind() == kind::Kind_t::NEG)
+          {
+            coef =
+                -1
+                * stoi(
+                    (*(*lhs.begin()).begin()).getConst<Rational>().toString());
+          }
+          else  // almost sure is a alone value for coefficient
+          {
+            coef = stoi((*lhs.begin()).getConst<Rational>().toString());
+          }
+          coefficients.push_back(coef);
+          vars.push_back((*lhs.rbegin()));
         }
-        coefficients.push_back(coef);
-        vars.push_back((*lhs.rbegin()));
+        else
+        {
+          for (const auto& val : lhs)
+          {
+            if (val.getKind() == kind::Kind_t::MULT)
+            {
+              vars.push_back(*val.rbegin());
+              int coef;
+              if ((*val.begin()).getKind() == kind::Kind_t::NEG)
+              {
+                coef = -1
+                       * stoi((*(*val.begin()).begin())
+                                  .getConst<Rational>()
+                                  .toString());
+              }
+              else  // almost sure is a alone value for coefficient
+              {
+                coef = stoi((*val.begin()).getConst<Rational>().toString());
+              }
+              coefficients.push_back(coef);
+            }
+            else
+
+            {
+              // for sure it's a single variable, so it's coefficient is 1
+              vars.push_back(lhs);
+              coefficients.push_back(1);
+            }
+          }
+        }
       }
-      // safely assume a1x1 + ... anxn = c
       else
       {
-        for (const auto& val : lhs)
+        // form x = c
+        if (lhs.getKind() == kind::Kind_t::VARIABLE)
         {
-          if (val.getKind() == kind::Kind_t::MULT)
+          vars.push_back(lhs);
+          coefficients.push_back(1);
+        }
+        // form ax = c
+        else if (lhs.getKind() == kind::Kind_t::MULT)
+        {
+          int coef;
+          if ((*lhs.begin()).getKind() == kind::Kind_t::NEG)
           {
-            vars.push_back(*val.rbegin());
-            int coef;
-            if ((*val.begin()).getKind() == kind::Kind_t::NEG)
-            {
-              coef = -1
-                     * stoi((*(*val.begin()).begin())
-                                .getConst<Rational>()
-                                .toString());
-            }
-            else  // almost sure is a alone value for coefficient
-            {
-              coef = stoi((*val.begin()).getConst<Rational>().toString());
-            }
-            coefficients.push_back(coef);
+            coef =
+                -1
+                * stoi(
+                    (*(*lhs.begin()).begin()).getConst<Rational>().toString());
           }
-          else
-
+          else  // almost sure is a alone value for coefficient
           {
-            // for sure it's a single variable, so it's coefficient is 1
-            vars.push_back(lhs);
-            coefficients.push_back(1);
+            coef = stoi((*lhs.begin()).getConst<Rational>().toString());
+          }
+          coefficients.push_back(coef);
+          vars.push_back((*lhs.rbegin()));
+        }
+        // safely assume a1x1 + ... anxn = c
+        else
+        {
+          for (const auto& val : lhs)
+          {
+            if (val.getKind() == kind::Kind_t::MULT)
+            {
+              vars.push_back(*val.rbegin());
+              int coef;
+              if ((*val.begin()).getKind() == kind::Kind_t::NEG)
+              {
+                coef = -1
+                       * stoi((*(*val.begin()).begin())
+                                  .getConst<Rational>()
+                                  .toString());
+              }
+              else  // almost sure is a alone value for coefficient
+              {
+                coef = stoi((*val.begin()).getConst<Rational>().toString());
+              }
+              coefficients.push_back(coef);
+            }
+            else
+
+            {
+              // for sure it's a single variable, so it's coefficient is 1
+              vars.push_back(lhs);
+              coefficients.push_back(1);
+            }
           }
         }
       }
@@ -218,35 +282,6 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
     }
     break;
 
-    // CAN'T HANDLE MODULUS YET
-    case kind::Kind_t::INTS_MODULUS_TOTAL:
-    {
-      TNode lhs = *aux.begin();   // the mod part
-      TNode rhs = *aux.rbegin();  // c
-      c = stoi(rhs.getConst<Rational>().toString());
-
-      rhs = *lhs.rbegin();
-      lhs = *lhs.begin();
-      mod_value = stoi(rhs.getConst<Rational>().toString());
-      for (const TNode& assertion : lhs)
-      {
-        if (assertion.getKind() == kind::Kind_t::MULT)
-        {
-          lhs = *assertion.begin();
-          int64_t coef = stoi(lhs.getConst<Rational>().toString());
-          coefficients.push_back(coef);
-        }
-        else if (assertion.getKind() == kind::Kind_t::VARIABLE)
-        {
-          coefficients.push_back(1);
-        }
-        else
-        {
-          std::cout << "We shouldn't get here" << std::endl;
-        }
-      }
-      break;
-    }
     default: break;
   }
   // dbg("-------");
@@ -256,9 +291,10 @@ AtomicFormulaStructure get_atomic_formula_structure(const TNode& node)
   //   std::cout << coefficients[i] << " " << vars[i] << std::endl;
   // }
   // dbg(c);
+  // dbg(mod_value);
   //
   // dbg("-------");
-  return {node.getKind(), coefficients, vars, c, mod_value};
+  return {atomic_formula_kind, coefficients, vars, c, mod_value};
 }
 
 // We are basically setting the bit of the variable to 0 in every track
@@ -268,16 +304,9 @@ void Automata::project_variable(mata::nfa::Nfa& nfa,
   nfa.trim();
   unsigned long var_idx = vars_to_int[variable_to_project];
   std::vector<std::tuple<int, int, int>> transitions_to_add;
-  for (unsigned long state = 0; state < nfa.num_of_states(); state++)
+  for (const auto& [from, symb, to] : nfa.delta.transitions())
   {
-    for (auto& trans : nfa.delta.mutable_state_post(state))
-    {
-      for (auto& tgt : trans.targets)
-      {
-        transitions_to_add.push_back(
-            {state, trans.symbol ^ (1UL << var_idx), tgt});
-      }
-    }
+    transitions_to_add.push_back({from, symb ^ (1UL << var_idx), to});
   }
   for (auto& [from, symb, to] : transitions_to_add)
   {
@@ -285,17 +314,10 @@ void Automata::project_variable(mata::nfa::Nfa& nfa,
   }
 }
 
-void Automata::perform_pad_closure(mata::nfa::Nfa& nfa,
-                                   const Node& variable_to_project)
+void Automata::perform_pad_closure(mata::nfa::Nfa& nfa)
 {
   std::set<unsigned long> states_to_process;
   nfa.trim();
-  unsigned long flag = 1UL << vars_to_int[variable_to_project];
-  auto cmp = [&flag](unsigned long a, unsigned long b) {
-    return ((~flag) & a) == ((~flag) & b);
-  };
-
-  std::cout << std::bitset<8>(flag) << std::endl;
   unsigned long number_of_variables =
       static_cast<unsigned long>(vars_to_int.size());
   unsigned long qf = nfa.num_of_states();
@@ -303,12 +325,15 @@ void Automata::perform_pad_closure(mata::nfa::Nfa& nfa,
   std::vector<std::tuple<int, int, int>> transitions_to_add;
   for (unsigned long sigma = 0; sigma < (1UL << number_of_variables); sigma++)
   {
-    std::set<int> S;
+    std::set<unsigned long> S;
     for (const auto& final_state : nfa.final)
     {
       for (const auto& trans : nfa.delta.get_transitions_to(final_state))
       {
-        if (cmp(trans.symbol, sigma)) states_to_process.insert(trans.source);
+        if (trans.symbol == sigma)
+        {
+          states_to_process.insert(trans.source);
+        }
       }
     }
     while (!states_to_process.empty())
@@ -319,7 +344,10 @@ void Automata::perform_pad_closure(mata::nfa::Nfa& nfa,
 
       for (const auto& trans : nfa.delta.get_transitions_to(next_state))
       {
-        if (!cmp(trans.symbol, sigma)) continue;
+        if (trans.symbol != sigma)
+        {
+          continue;
+        }
         if (S.find(trans.source) == S.end())
         {
           states_to_process.insert(trans.source);
@@ -333,7 +361,7 @@ void Automata::perform_pad_closure(mata::nfa::Nfa& nfa,
       {
         for (const auto& trans : nfa.delta.get_transitions_to(final_state))
         {
-          if (trans.source == q && cmp(trans.symbol, sigma))
+          if (trans.source == q && trans.symbol == sigma)
           {
             should_add = false;
             break;
@@ -342,7 +370,6 @@ void Automata::perform_pad_closure(mata::nfa::Nfa& nfa,
       }
       if (should_add)
       {
-        // nfa.delta.add(q, sigma, qf);
         transitions_to_add.push_back({q, sigma, qf});
       }
     }
@@ -355,16 +382,13 @@ void Automata::perform_pad_closure(mata::nfa::Nfa& nfa,
 mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
 {
   mata::nfa::Nfa formula_nfa;
-  // std::cout << node << std::endl;
-  // std::cout << node.getKind() << std::endl;
   switch (node.getKind())
   {
     case kind::Kind_t::EQUAL:
     case kind::Kind_t::LEQ:
-    case kind::Kind_t::INTS_MODULUS_TOTAL:
+    case kind::Kind_t::INTS_MODULUS:
     {
       formula_nfa = build_nfa_for_atomic_formula(node);
-      // formula_nfa.print_to_dot(std::cout);
     }
     break;
     case kind::Kind_t::OR:
@@ -373,7 +397,6 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       auto nfa2 = build_nfa_for_formula(*node.rbegin());
       // And here a get the union
       nfa1.unite_nondet_with(nfa2);
-      std::cout << "united nfas" << std::endl;
       formula_nfa = nfa1;
     }
     break;
@@ -382,7 +405,6 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       auto nfa1 = build_nfa_for_formula(*node.begin());
       auto nfa2 = build_nfa_for_formula(*node.rbegin());
       formula_nfa = mata::nfa::intersection(nfa1, nfa2);
-      std::cout << "intersected nfas" << std::endl;
     }
     break;
     case kind::Kind_t::NOT:
@@ -391,41 +413,27 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
           *node.begin());  // I AM ASSUMING THIS IS HOW TO DO IT WITH NOT,
                            // COULD BE SOMETHING ELSE
       nfa1.trim();
-      // this could be wrong I should check it
-      std::cout << "I will try to complement deterministic the nfa\n";
       formula_nfa = nfa1;
 
       mata::utils::OrdVector<mata::Symbol> alph;
       for (int i = 0; i < (1 << vars_to_int.size()); i++) alph.push_back(i);
       formula_nfa = mata::nfa::complement(
           formula_nfa, alph, {{"algorithm", "classical"}});
-
-      std::cout << "I complemented it\n";
     }
     break;
     case kind::Kind_t::EXISTS:
     {
-      dbg(node);
-      std::cout << "VARS TO PROJECT OUT" << std::endl;
-      dbg(*node.begin());  // variable to project out
       std::vector<Node> variables_to_project;
       for (auto var : *node.begin())
       {
         variables_to_project.push_back(var);
       }
-      dbg(*node.rbegin());  // formula
       formula_nfa = build_nfa_for_formula(*node.rbegin());
-      int yu = 0;
-      mata::nfa::minimize(formula_nfa);
       for (const auto& variable_to_project : variables_to_project)
       {
         project_variable(formula_nfa, variable_to_project);
       }
-      for (const auto& variable_to_project : variables_to_project)
-      {
-        perform_pad_closure(formula_nfa, variable_to_project);
-      }
-      formula_nfa.print_to_dot(std::cout);
+      perform_pad_closure(formula_nfa);
     }
     break;
     default: break;
@@ -435,7 +443,6 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
 
 mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
 {
-  dbg(node);
   mata::nfa::Nfa aut;
   std::map<NfaState, unsigned int> nfa_state_to_int;
   auto [assertion_kind, coefficients, vars, c, mod_value] =
@@ -458,7 +465,6 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
 
       while (!states_to_process.empty())
       {
-        // this should remove the first element of the set
         NfaState state = *states_to_process.begin();
         states_to_process.erase(std::next(states_to_process.begin(), 0));
 
@@ -470,10 +476,8 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
              sigma++)
         {
           int new_c = state.c;
-
           int acc = 0;
 
-          // this can be preocmputed
           for (int i = 0; i < (int)coefficients.size(); i++)
           {
             acc += coefficients.at(i)
@@ -485,10 +489,6 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
             continue;  // value is odd, we can continue
           }
 
-          // if (state.c + acc == 0)
-          // {
-          //   aut.final.insert(nfa_state_to_int[{state.c, state.mod_value}]);
-          // }
           new_c /= 2;
 
           if (nfa_state_to_int.count({new_c, state.mod_value}) == 0)
@@ -537,9 +537,7 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
              sigma++)
         {
           int new_c = state.c;
-
           int acc = 0;
-          // this can be preocmputed
 
           for (int i = 0; i < (int)coefficients.size(); i++)
           {
@@ -569,9 +567,82 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
       }
     }
     break;
+    case kind::Kind_t::INTS_MODULUS:
+    {
+      NfaState final_state = {0, 0};  // for this particular case we use the mod
+                                      // value as a flag for the final state
+      nfa_state_to_int[final_state] =
+          idx++;  // final state is always gonna be index 0
+      std::set<NfaState> states_to_process;
+
+      aut.initial = {idx};
+      nfa_state_to_int[{c, mod_value}] = idx++;
+      states_to_process.insert({c, mod_value});
+      while (!states_to_process.empty())
+      {
+        // this should remove the first element of the set
+        NfaState state = *states_to_process.begin();
+
+        states_to_process.erase(std::next(states_to_process.begin(), 0));
+        unsigned long number_of_variables =
+            static_cast<unsigned long>(vars_to_int.size());
+        for (unsigned long sigma = 0; sigma < (1UL << number_of_variables);
+             sigma++)
+        {
+          int acc = 0;
+          int new_c = state.c;
+          for (int i = 0; i < (int)coefficients.size(); i++)
+          {
+            acc += coefficients.at(i)
+                   * ((sigma & (1 << vars_to_int[vars[i]])) ? 1 : 0);
+          }
+          new_c -= acc;
+          if (state.mod_value % 2 == 0 && new_c % 2 == 0)
+          {
+            unsigned int new_mod = state.mod_value / 2;
+            new_c /= 2;
+
+            if (nfa_state_to_int.count({new_c, new_mod}) == 0)
+            {
+              // states_to_process.insert({new_c, new_mod});
+              aut.add_state(idx);
+              nfa_state_to_int[{new_c, new_mod}] = idx++;
+            }
+            aut.delta.add(nfa_state_to_int[state],
+                          sigma,
+                          nfa_state_to_int[{new_c, new_mod}]);
+          }
+          else if (state.mod_value % 2 != 0)
+          {
+            if (new_c % 2 == 0)
+            {
+              new_c /= 2;
+            }
+            else
+            {
+              new_c = (new_c + state.mod_value) / 2;
+            }
+            if (nfa_state_to_int.count({new_c, state.mod_value}) == 0)
+            {
+              // states_to_process.insert({new_c, state.mod_value});
+              aut.add_state(idx);
+              nfa_state_to_int[{new_c, state.mod_value}] = idx++;
+            }
+            aut.delta.add(nfa_state_to_int[state],
+                          sigma,
+                          nfa_state_to_int[{new_c, state.mod_value}]);
+            if (states_to_process.find({new_c, state.mod_value})
+                == states_to_process.end())
+            {
+              states_to_process.insert({new_c, state.mod_value});
+            }
+          }
+        }
+      }
+    }
+    break;
     default: break;
   }
-  std::cout << "Build NFA for atomic formula " << node << std::endl;
   return aut;
 }
 
