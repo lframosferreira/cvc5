@@ -578,11 +578,11 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
       aut.initial = {idx};
       nfa_state_to_int[{c, mod_value}] = idx++;
       states_to_process.insert({c, mod_value});
+      aut.final.insert(nfa_state_to_int[final_state]);
       while (!states_to_process.empty())
       {
         // this should remove the first element of the set
         NfaState state = *states_to_process.begin();
-
         states_to_process.erase(std::next(states_to_process.begin(), 0));
         unsigned long number_of_variables =
             static_cast<unsigned long>(vars_to_int.size());
@@ -637,8 +637,15 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
               states_to_process.insert({new_c, state.mod_value});
             }
           }
+          if ((state.c + acc) % state.mod_value == 0)
+          {
+            dbg("final");
+            aut.delta.add(
+                nfa_state_to_int[state], sigma, nfa_state_to_int[final_state]);
+          }
         }
       }
+      aut.print_to_dot(std::cout);
     }
     break;
     default: break;
@@ -768,7 +775,7 @@ PreprocessingPassResult Automata::applyInternal(
   }
   global_nfa.trim();
   // global_nfa = mata::nfa::minimize(global_nfa);
-  // global_nfa.print_to_dot(std::cout);
+  global_nfa.print_to_dot(std::cout);
 
   std::cout << (global_nfa.is_lang_empty() ? "automata says unsat"
                                            : "automata says sat")
