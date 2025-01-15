@@ -37,6 +37,11 @@ inline int divide_by_two_and_floor(int k)
   return k % 2 == 0 ? k / 2 : (k < 0 ? k / 2 - 1 : k / 2);
 }
 
+inline unsigned long mod_by_m(int k, unsigned int m)
+{
+  return (m + (k % m)) % m;
+}
+
 using namespace cvc5::internal;
 using namespace cvc5::internal::theory;
 #define dbg(x) std::cout << #x << " = " << x << "\n"
@@ -601,6 +606,7 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
           {
             unsigned int new_mod = state.mod_value / 2;
             new_c /= 2;
+            new_c = mod_by_m(new_c, state.mod_value);
 
             if (nfa_state_to_int.count({new_c, new_mod}) == 0)
             {
@@ -622,6 +628,7 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
             {
               new_c = (new_c + state.mod_value) / 2;
             }
+            new_c = mod_by_m(new_c, state.mod_value);
             if (nfa_state_to_int.count({new_c, state.mod_value}) == 0)
             {
               // states_to_process.insert({new_c, state.mod_value});
@@ -637,15 +644,14 @@ mata::nfa::Nfa Automata::build_nfa_for_atomic_formula(const Node& node)
               states_to_process.insert({new_c, state.mod_value});
             }
           }
+
           if ((state.c + acc) % state.mod_value == 0)
           {
-            dbg("final");
             aut.delta.add(
                 nfa_state_to_int[state], sigma, nfa_state_to_int[final_state]);
           }
         }
       }
-      aut.print_to_dot(std::cout);
     }
     break;
     default: break;
@@ -773,8 +779,6 @@ PreprocessingPassResult Automata::applyInternal(
     }
     count++;
   }
-  global_nfa.trim();
-  // global_nfa = mata::nfa::minimize(global_nfa);
   global_nfa.print_to_dot(std::cout);
 
   std::cout << (global_nfa.is_lang_empty() ? "automata says unsat"
