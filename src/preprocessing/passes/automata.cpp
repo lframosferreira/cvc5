@@ -18,6 +18,7 @@
 
 #include <alphabet.hh>
 #include <cmath>
+#include <cstdio>
 #include <iterator>
 #include <mata/nfa/nfa.hh>
 #include <string>
@@ -362,17 +363,19 @@ void Automata::perform_pad_closure(mata::nfa::Nfa& nfa)
     for (const auto& q : S)
     {
       bool should_add = true;
-      for (const auto& final_state : nfa.final)
+
+      for (const auto& trans : nfa.delta.state_post(q))
       {
-        for (const auto& trans : nfa.delta.get_transitions_to(final_state))
+        for (const auto& nxt : trans.targets)
         {
-          if (trans.source == q && trans.symbol == sigma)
+          if (trans.symbol == sigma && nfa.final.contains(nxt))
           {
             should_add = false;
             break;
           }
         }
       }
+
       if (should_add)
       {
         transitions_to_add.push_back({q, sigma, qf});
@@ -393,7 +396,9 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
     case kind::Kind_t::LEQ:
     case kind::Kind_t::INTS_MODULUS:
     {
+      std::printf("creating nfa for atomic formula\n");
       formula_nfa = build_nfa_for_atomic_formula(node);
+      std::printf("ended creation of nfa for atomic formula\n");
     }
     break;
     case kind::Kind_t::OR:
@@ -401,7 +406,9 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       auto nfa1 = build_nfa_for_formula(*node.begin());
       auto nfa2 = build_nfa_for_formula(*node.rbegin());
       // And here a get the union
+      std::printf("applying union\n");
       nfa1.unite_nondet_with(nfa2);
+      std::printf("finished union\n");
       formula_nfa = nfa1;
     }
     break;
@@ -409,7 +416,9 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
     {
       auto nfa1 = build_nfa_for_formula(*node.begin());
       auto nfa2 = build_nfa_for_formula(*node.rbegin());
+      std::printf("applying intersection\n");
       formula_nfa = mata::nfa::intersection(nfa1, nfa2);
+      std::printf("finished intersection\n");
     }
     break;
     case kind::Kind_t::NOT:
@@ -420,25 +429,26 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       nfa1.trim();
       formula_nfa = nfa1;
 
+      std::printf("applying complement\n");
       mata::utils::OrdVector<mata::Symbol> alph;
       for (int i = 0; i < (1 << vars_to_int.size()); i++) alph.push_back(i);
       formula_nfa = mata::nfa::complement(
           formula_nfa, alph, {{"algorithm", "classical"}});
+      std::printf("finished complement\n");
     }
     break;
     case kind::Kind_t::EXISTS:
     {
-      std::vector<Node> variables_to_project;
+      formula_nfa = build_nfa_for_formula(*node.rbegin());
+      std::printf("applying projection\n");
       for (auto var : *node.begin())
       {
-        variables_to_project.push_back(var);
+        project_variable(formula_nfa, var);
       }
-      formula_nfa = build_nfa_for_formula(*node.rbegin());
-      for (const auto& variable_to_project : variables_to_project)
-      {
-        project_variable(formula_nfa, variable_to_project);
-      }
+      std::printf("finished projection\n");
+      std::printf("applying pad closure\n");
       perform_pad_closure(formula_nfa);
+      std::printf("finished pad closure\n");
     }
     break;
     default: break;
@@ -684,11 +694,11 @@ std::map<Node, int> Automata::get_single_solution()
         }
       }
     }
-    for (auto& [var, value] : solution)
-    {
-      // std::cout << std::bitset<32>(value) << std::endl;
-      std::cout << var << " " << value << std::endl;
-    }
+    // for (auto& [var, value] : solution)
+    // {
+    //   std::cout << std::bitset<32>(value) << std::endl;
+    //   std::cout << var << " " << value << std::endl;
+    // }
   }
 
   return solution;
@@ -719,11 +729,11 @@ std::map<Node, int> Automata::get_posible_solutions()
         }
       }
     }
-    for (auto& [var, value] : solution)
-    {
-      // std::cout << std::bitset<32>(value) << std::endl;
-      std::cout << var << " " << value << std::endl;
-    }
+    // for (auto& [var, value] : solution)
+    // {
+    //   std::cout << std::bitset<32>(value) << std::endl;
+    //   std::cout << var << " " << value << std::endl;
+    // }
   }
 
   return solution;
@@ -747,7 +757,6 @@ PreprocessingPassResult Automata::applyInternal(
   std::unordered_set<Node> vars;
   for (const Node& a : assertionsToPreprocess->ref())
   {
-    dbg(a);
     expr::getVariables(a, vars);
     to_process.push_back(a);
   }
@@ -764,7 +773,6 @@ PreprocessingPassResult Automata::applyInternal(
   // to_process.pop_back();  // only removing true formula
 
   int count = 0;
-  std::cout << "starting to build automata" << std::endl;
   for (const Node assertion : to_process)
   {
     // build automata for atomic formula
@@ -779,15 +787,21 @@ PreprocessingPassResult Automata::applyInternal(
     }
     count++;
   }
-  global_nfa.print_to_dot(std::cout);
 
-  std::cout << (global_nfa.is_lang_empty() ? "automata says unsat"
-                                           : "automata says sat")
-            << std::endl;
-  if (!global_nfa.is_lang_empty()) get_single_solution();
+  assertionsToPreprocess->clear();
+  if (!global_nfa.is_lang_empty())
+  {
+    std::map<Node, int> solution = get_single_solution();
+
+    for (const auto& [var, value] : solution)
+    {
+      auto newAssertion = nodeManager()->mkNode(
+          Kind::EQUAL, var, nodeManager()->mkConstRealOrInt(value));
+      assertionsToPreprocess->push_back(newAssertion);
+    }
+  }
   return PreprocessingPassResult::NO_CONFLICT;
 }
-
 }  // namespace passes
 }  // namespace preprocessing
 }  // namespace cvc5::internal
