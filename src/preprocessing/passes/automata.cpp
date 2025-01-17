@@ -396,9 +396,9 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
     case kind::Kind_t::LEQ:
     case kind::Kind_t::INTS_MODULUS:
     {
-      std::printf("creating nfa for atomic formula\n");
+      // std::printf("creating nfa for atomic formula\n");
       formula_nfa = build_nfa_for_atomic_formula(node);
-      std::printf("ended creation of nfa for atomic formula\n");
+      // std::printf("ended creation of nfa for atomic formula\n");
     }
     break;
     case kind::Kind_t::OR:
@@ -406,9 +406,9 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       auto nfa1 = build_nfa_for_formula(*node.begin());
       auto nfa2 = build_nfa_for_formula(*node.rbegin());
       // And here a get the union
-      std::printf("applying union\n");
+      // std::printf("applying union\n");
       nfa1.unite_nondet_with(nfa2);
-      std::printf("finished union\n");
+      // std::printf("finished union\n");
       formula_nfa = nfa1;
     }
     break;
@@ -416,9 +416,9 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
     {
       auto nfa1 = build_nfa_for_formula(*node.begin());
       auto nfa2 = build_nfa_for_formula(*node.rbegin());
-      std::printf("applying intersection\n");
+      // std::printf("applying intersection\n");
       formula_nfa = mata::nfa::intersection(nfa1, nfa2);
-      std::printf("finished intersection\n");
+      // std::printf("finished intersection\n");
     }
     break;
     case kind::Kind_t::NOT:
@@ -429,26 +429,26 @@ mata::nfa::Nfa Automata::build_nfa_for_formula(const Node& node)
       nfa1.trim();
       formula_nfa = nfa1;
 
-      std::printf("applying complement\n");
+      // std::printf("applying complement\n");
       mata::utils::OrdVector<mata::Symbol> alph;
       for (int i = 0; i < (1 << vars_to_int.size()); i++) alph.push_back(i);
       formula_nfa = mata::nfa::complement(
           formula_nfa, alph, {{"algorithm", "classical"}});
-      std::printf("finished complement\n");
+      // std::printf("finished complement\n");
     }
     break;
     case kind::Kind_t::EXISTS:
     {
       formula_nfa = build_nfa_for_formula(*node.rbegin());
-      std::printf("applying projection\n");
+      // std::printf("applying projection\n");
       for (auto var : *node.begin())
       {
         project_variable(formula_nfa, var);
       }
-      std::printf("finished projection\n");
-      std::printf("applying pad closure\n");
+      // std::printf("finished projection\n");
+      // std::printf("applying pad closure\n");
       perform_pad_closure(formula_nfa);
-      std::printf("finished pad closure\n");
+      // std::printf("finished pad closure\n");
     }
     break;
     default: break;
@@ -747,7 +747,6 @@ Automata::Automata(PreprocessingPassContext* preprocContext)
 PreprocessingPassResult Automata::applyInternal(
     AssertionPipeline* assertionsToPreprocess)
 {
-  std::cout << "Applying internal for automata preprocessing" << std::endl;
   AlwaysAssert(!options().base.incrementalSolving);
 
   /* collect all function applications and generate consistency lemmas
@@ -766,8 +765,8 @@ PreprocessingPassResult Automata::applyInternal(
   for (const Node& a : vars)
   {
     vars_to_int[a] = idx++;
-    dbg(a);
-    dbg(vars_to_int[a]);
+    // dbg(a);
+    // dbg(vars_to_int[a]);
   }
 
   // to_process.pop_back();  // only removing true formula
