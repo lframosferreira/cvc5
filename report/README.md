@@ -1,4 +1,4 @@
-# How to build the project
+# How to build the project locally
 
 ## Mata lib
 
@@ -13,6 +13,20 @@
 - Change to the build directory and run: `make && sudo make install`
 - The binary `cvc5` is installed in the directory `cvc5/build/bin/`
 
+# How to build the project in docker
+
+We made available a Dockerfile for building a container that contains everything needed to use the project. You can built it normally. But be aware, it taken A LONG time to built, around 10 minutes on my machine.
+
+# Available docker image
+
+In my Dockerhub there is an already built image with everything needed for using the program. You can download it like this:
+
+`sudo docker pull luisfeliperamos/poc:latest`
+
+In order to run it, use:
+
+`docker run --rm luisfeliperamos/poc:latest`
+
 # How to use
 
 - Run `./cvc5/build/bin/cvc5 [inputfile] --automata`. The `--automata` flag applies the automata preprocessing.
@@ -20,11 +34,12 @@
 # IMPORTANT
 
 This implementation only works with LIA formulae following the grammar presented in the report. It will crash if anything else is passed as an input.
+WE CURRENTLY DO NOT SUPPORT MODULUS OPERATIONS DUE TO SOME BUGS FOUND IN THE PROJECT.
 Inside the `cvc5` folder there are two other folders, called `lia_tests` and `qflia_tests`, each of which contains benchmarks for testing the implementation that are already following
 the specified format. If you want to use another set of tests but don't want the trouble of rewriting it to respect the accepted grammar yourself, you can use the Amaya tool `convert` step
 to do it for you. Instructions on how to build and use Amaya are described below:
 
-## How to build and use Amaya
+## How to build and use Amaya convert step
 
 - Clone the repository `https://github.com/MichalHe/amaya` and follow the build instructions described in the README file
 - Run `python3 run-amaya.py convert [inputfile]`. This will print to *stdout* the converted formula
