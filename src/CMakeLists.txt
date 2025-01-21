@@ -1540,7 +1540,7 @@ if(USE_KISSAT)
 endif()
 
 if (USE_MATA)
-  add_dependencies(cvc5-obj Mata)
+  # add_dependencies(cvc5-obj Mata)
   target_include_directories(cvc5-obj SYSTEM PRIVATE ${Mata_INCLUDE_DIR})
   target_link_libraries(cvc5 PRIVATE "/usr/local/lib/libmata.a")
 endif()
