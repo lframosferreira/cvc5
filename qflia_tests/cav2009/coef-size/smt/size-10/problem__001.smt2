@@ -1,0 +1,16 @@
+(set-logic LIA)
+(declare-fun x0 () Int)
+(declare-fun x1 () Int)
+(declare-fun x2 () Int)
+(declare-fun x3 () Int)
+(declare-fun x4 () Int)
+(assert
+  (and
+    (<= (+ (* (- 2) x0) (* (- 4) x2) (* 1 x4)) (- 2))
+    (<= (+ (* (- 2) x0) (* 0 x2)) 2)
+    (<= (+ (* (- 3) x0) (* 3 x1) (* 5 x2) (* 4 x4)) 2)
+    (<= (+ (* 1 x0) (* (- 3) x2) (* 3 x3) (* 1 x4)) (- 1))
+    (<= (+ (* 2 x0) (* (- 3) x2)) (- 2))
+  )
+)
+(check-sat)

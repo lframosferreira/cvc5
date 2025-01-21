@@ -1,0 +1,15 @@
+(set-logic LIA)
+(declare-fun x0 () Int)
+(declare-fun x1 () Int)
+(declare-fun x2 () Int)
+(declare-fun x3 () Int)
+(declare-fun x4 () Int)
+(declare-fun x5 () Int)
+(declare-fun x6 () Int)
+(declare-fun x7 () Int)
+(declare-fun x8 () Int)
+(declare-fun x9 () Int)
+(assert
+  false
+)
+(check-sat)
