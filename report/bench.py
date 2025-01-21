@@ -24,7 +24,9 @@ def get_solver_bin_path(solver: str) -> str:
 def run() -> None:
     df: pd.DataFrame = pd.DataFrame([], columns=["solver", "file", "time"])
     for solver in SOLVERS:
-        TIME_LIMIT: float = 120 if solver in ["Amaya", "Lash", "cvc5_automata"] else 20
+        if solver != "Z3":
+            continue
+        TIME_LIMIT: float = 120 if solver in ["Amaya", "Lash", "cvc5_automata"] else 120
         print(solver)
         bin_path: str = get_solver_bin_path(solver)
         args: list[str] = []
@@ -50,7 +52,7 @@ def run() -> None:
                     ignore_index=True,
                 )
                 continue
-            if int(index[index.find("_") + 1 :]) > 15 and solver in ["Z3"]:
+            if int(index[index.find("_") + 1 :]) > 50 and solver in ["Z3"]:
                 print(index)
                 df = df._append(
                     {"solver": solver, "file": index, "time": TIME_LIMIT},
@@ -75,7 +77,7 @@ def run() -> None:
                 {"solver": solver, "file": index, "time": total_time}, ignore_index=True
             )
             args.pop()
-    df.to_csv("output.csv")
+    df.to_csv("output_z3.csv")
 
 
 if __name__ == "__main__":
