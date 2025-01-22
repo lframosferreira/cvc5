@@ -15,17 +15,17 @@
 
 # How to build the project in docker
 
-We made available a Dockerfile for building a container that contains everything needed to use the project. You can built it normally. But be aware, it taken A LONG time to built, around 10 minutes on my machine.
+We made available a Dockerfile for building a container that contains everything needed to use the project. You can built it normally. But be aware, it takes A LONG time to build, around 10 minutes on my machine.
 
 # Available docker image
 
 In my Dockerhub there is an already built image with everything needed for using the program. You can download it like this:
 
-`sudo docker pull luisfeliperamos/poc:latest`
+`sudo docker pull luisfeliperamos/poc`
 
 In order to run it, use:
 
-`docker run --rm luisfeliperamos/poc:latest`
+`sudo docker run -it luisfeliperamos/poc`
 
 # How to use
 

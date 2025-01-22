@@ -38,7 +38,7 @@ RUN git clone https://github.com/MichalHe/amaya-mtbdd.git amaya-mtbdd
 RUN cd amaya-mtbdd && make -j`nproc` shared-lib
 
 RUN git clone https://github.com/MichalHe/amaya.git 
-RUN cd amaya && cp ../amaya-mtbdd/build/amaya-mtbdd.so /amaya/
+RUN cp amaya-mtbdd/build/amaya-mtbdd.so amaya/amaya/
 RUN cd amaya && pip3 install -r requirements.txt --break-system-packages
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib/"
 
