@@ -35,8 +35,11 @@ In order to run it, use:
 
 This implementation only works with LIA formulae following the grammar presented in the report. It will crash if anything else is passed as an input.
 WE CURRENTLY DO NOT SUPPORT MODULUS OPERATIONS DUE TO SOME BUGS FOUND IN THE PROJECT.
+
 Inside the `cvc5` folder there are two other folders, called `lia_tests` and `qflia_tests`, each of which contains benchmarks for testing the implementation that are already following
-the specified format. If you want to use another set of tests but don't want the trouble of rewriting it to respect the accepted grammar yourself, you can use the Amaya tool `convert` step
+the specified format. Our solver performs better in the set of benchmarks in `lia_tests/frobenius`, as explained in the report.
+
+If you want to use another set of tests but don't want the trouble of rewriting it to respect the accepted grammar yourself, you can use the Amaya tool `convert` step
 to do it for you. Instructions on how to build and use Amaya are described below:
 
 ## How to build and use Amaya convert step
